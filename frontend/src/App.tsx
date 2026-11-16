@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { EmployeesPage } from './pages/EmployeesPage';
 import { NewSalePage } from './pages/NewSalePage';
 import { SalesLedgerPage } from './pages/SalesLedgerPage';
+import { SaleDetailsPage } from './pages/SaleDetailsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
 
               {/* Placeholder Routes for Subsequent Phases */}
               <Route path="sales/new" element={<NewSalePage />} />
+              <Route path="sales/:id" element={<SaleDetailsPage />} />
               <Route path="sales" element={<SalesLedgerPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="reports" element={<ReportsPage />} />

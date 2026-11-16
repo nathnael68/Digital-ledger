@@ -39,6 +39,9 @@ class Payment(Base):
     reference: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, index=True
     )
+    idempotency_key: Mapped[Optional[str]] = mapped_column(
+        String(100), unique=True, index=True, nullable=True
+    )
     recorded_by: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("users.id", ondelete="RESTRICT"),

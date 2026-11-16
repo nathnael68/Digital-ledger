@@ -6,6 +6,7 @@ from backend.app.models.sale import Sale
 from backend.app.models.sale_item import SaleItem
 from backend.app.models.payment import Payment
 from backend.app.models.audit_log import AuditLog
+from backend.app.models.sale_sequence import SaleSequence
 
 __all__ = [
     "Base",
@@ -16,4 +17,5 @@ __all__ = [
     "SaleItem",
     "Payment",
     "AuditLog",
+    "SaleSequence",
 ]

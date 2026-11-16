@@ -16,6 +16,20 @@ from backend.app.schemas.dashboard import (
     RecentTransaction,
     DashboardResponse,
 )
+from backend.app.schemas.sale import (
+    SaleItemCreate,
+    SaleItemResponse,
+    SalePaymentInput,
+    SaleCreate,
+    SaleCorrectionInput,
+    SaleVoidInput,
+    PaymentCreate,
+    PaymentResponse,
+    SaleDetailResponse,
+    SaleListResponse,
+)
+from backend.app.schemas.product import ProductCreate, ProductResponse
+from backend.app.schemas.customer import CustomerCreate, CustomerResponse
 
 __all__ = [
     "HealthResponse",
@@ -34,4 +48,18 @@ __all__ = [
     "PaymentMethodDistribution",
     "RecentTransaction",
     "DashboardResponse",
+    "SaleItemCreate",
+    "SaleItemResponse",
+    "SalePaymentInput",
+    "SaleCreate",
+    "SaleCorrectionInput",
+    "SaleVoidInput",
+    "PaymentCreate",
+    "PaymentResponse",
+    "SaleDetailResponse",
+    "SaleListResponse",
+    "ProductCreate",
+    "ProductResponse",
+    "CustomerCreate",
+    "CustomerResponse",
 ]

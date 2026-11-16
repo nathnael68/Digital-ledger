@@ -31,6 +31,7 @@ class SaleItem(Base):
         index=True,
     )
     description_snapshot: Mapped[str] = mapped_column(String(255), nullable=False)
+    unit: Mapped[str] = mapped_column(String(30), default="pcs", nullable=False)
     quantity: Mapped[Decimal] = mapped_column(
         Numeric(12, 3), nullable=False
     )

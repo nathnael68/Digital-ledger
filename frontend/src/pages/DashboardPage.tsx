@@ -329,7 +329,11 @@ export const DashboardPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {data.recent_transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
+                  <tr
+                    key={tx.id}
+                    onClick={() => navigate(`/sales/${tx.id}`)}
+                    className="hover:bg-slate-50/70 transition-colors cursor-pointer"
+                  >
                     <td className="py-3 px-3 font-mono font-bold text-slate-900">
                       {tx.sale_number}
                     </td>

@@ -84,20 +84,20 @@ The transformation from Delgone's handwritten sales books to an enterprise-grade
 
 ---
 
-### Phase 3: Sales Recording Engine & Paper Receipt Reconciliation
-- **Digital Counter Sales Wizard:**
-  - Fast, responsive point-of-sale interface designed for rapid counter entry.
-  - Product item search with instant price auto-population.
-  - Manual ad-hoc item entry for non-catalog custom supplies.
-  - Real-time line subtotal, discount, and grand total calculations.
-- **Transaction Engine:**
-  - Sequential, collision-resistant sale number generation (`DLG-YYYYMM-XXXX`).
-  - Mandatory paper receipt number capture for dual audit reconciliation.
-  - Atomic transaction commitment (Sale + Line Items + Snapshots).
-  - Price snapshotting to preserve historical financial records.
-- **Sales Ledger Screen:**
-  - Filterable transaction table (date range, payment status, employee, paper receipt #).
-  - Printable sales receipt and transaction detail modal.
+### Phase 3: Sales Management and Payment Recording (Completed)
+- [x] Product catalog selection (`GET /api/products/search`) and manual ad-hoc product line entry.
+- [x] Customer selection (`GET /api/customers/search`) and instant Walk-in customer counter toggle.
+- [x] Mandatory Customs FS Number (`fs_number`) capture and optional Paper Receipt serial tracking (`paper_receipt_number`).
+- [x] Safe, collision-free sequential sale numbering (`DL-YYYY-XXXX`) generated in Addis Ababa timezone (`Africa/Addis_Ababa`) with row locking on `SaleSequence`.
+- [x] Multi-line item entry with server-enforced `Decimal` arithmetic (subtotal, discounts, grand total) and immutable price snapshots.
+- [x] Complete payment recording: Cash, Bank Transfer (CBE, Awash, etc.), Telebirr, CBE Birr, Credit, down payments, and subsequent installments.
+- [x] Financial integrity checks: overpayment blocking, negative value validation, discount limits, and payment blocking on voided sales.
+- [x] Digital Sales Ledger interface (`/sales`) with multi-field search (Sale #, FS #, customer, receipt #, item description), status/method filters, and pagination.
+- [x] Sale detail page (`/sales/:id`) with line items, financial breakdown, payment history records, and modal workflows.
+- [x] Transaction metadata corrections (`PUT /api/sales/:id`) with mandatory justification and audit trail logging.
+- [x] Transaction voiding (`POST /api/sales/:id/void`) with mandatory reason, preserving payments and excluding from active dashboard metrics.
+- [x] Full real-time integration with Phase 2 dashboard metrics.
+- [x] Comprehensive test suites: 28 backend tests in Pytest and 13 frontend tests in Vitest passing.
 
 ---
 

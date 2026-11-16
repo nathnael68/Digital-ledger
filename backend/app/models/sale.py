@@ -46,6 +46,12 @@ class Sale(Base):
     paper_receipt_number: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, index=True
     )
+    fs_number: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True, index=True
+    )
+    idempotency_key: Mapped[Optional[str]] = mapped_column(
+        String(100), unique=True, index=True, nullable=True
+    )
     payment_status: Mapped[str] = mapped_column(
         String(20), default="pending", nullable=False, index=True
     )

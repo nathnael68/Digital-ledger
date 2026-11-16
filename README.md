@@ -198,14 +198,14 @@ The frontend will run at [http://localhost:5173](http://localhost:5173) and auto
 ## 4. Verification & Testing
 
 ### Backend Test Suite (Pytest)
-Run the automated pytest suite (tests authentication, rate limiting, permissions, model integrity, and real database dashboard calculations):
+Run the automated pytest suite (tests authentication, rate limiting, permissions, model integrity, sales creation, validation, collision-safe numbering, payment installments, voiding, and real database dashboard calculations):
 ```bash
-# Run all 21 backend tests:
+# Run all 28 backend tests:
 pytest backend/tests -v
 ```
 
 ### Frontend Test Suite (Vitest)
-Verify frontend components, authentication form validation, and role-based navigation:
+Verify frontend components, counter sales entry, sales ledger, detail view, authentication, and role-based navigation:
 ```bash
 cd frontend
 npm test
@@ -222,6 +222,10 @@ npm run build
 
 ## 5. Engineering Documentation Index
 
+- [Sales Workflow Documentation](docs/SALES_WORKFLOW.md) — Counter sales procedures, catalog vs. manual item entry, FS number compliance, and review modals.
+- [Payment Logic & Precision](docs/PAYMENT_LOGIC.md) — Exact Decimal math, rounding, payment states (Paid, Partial, Credit, Voided), and concurrency locks.
+- [Sales Management REST API](docs/SALES_API.md) — Complete endpoint reference for sales, items, payments, ledger querying, products, and customers.
+- [Transaction Audit & Voiding Policy](docs/TRANSACTION_AUDIT_AND_VOIDING.md) — Correction audit trail logging, justification rules, and revenue exclusion.
 - [Authentication & Session Architecture](docs/AUTHENTICATION.md) — HttpOnly cookie strategy, bcrypt hashing, rate limiting, and bootstrap procedure.
 - [Role-Based Access Control (RBAC)](docs/USER_ROLES_AND_PERMISSIONS.md) — Administrator vs Sales Employee permissions and defense-in-depth guards.
 - [Financial Dashboard Specification](docs/DASHBOARD.md) — Real-time formulas, cash vs bank segregation, and 7-day trend calculations.
