@@ -1,0 +1,244 @@
+# Delgone Digital Sales Ledger
+
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18.3+-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6+-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0+-D71F00.svg)](https://www.sqlalchemy.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1.svg?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4+-38B2AC.svg?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+
+A web-based digital sales and cashier ledger application engineered for **Delgone Trading PLC**, an Ethiopian trading and printing-supply business located in Addis Ababa.
+
+The platform systematically replaces handwritten paper sales logbooks with a centralized, auditable digital ledger. It provides dual receipt tracking (linking handwritten receipt serial numbers with auto-generated digital transaction numbers), multi-method payment splits (Cash, CBE, Awash, Telebirr, CBE Birr), real-time customer credit ledgering, and administrative oversight.
+
+---
+
+## 1. Technical Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, React Router v6, Axios, Lucide React Icons |
+| **Backend** | Python 3.11+, FastAPI, SQLAlchemy 2.0 (ORM), Pydantic v2, Alembic, psycopg3 / psycopg2-binary |
+| **Database** | PostgreSQL 16+ (Normalized schema, UUID primary keys, `NUMERIC(12,2)` Ethiopian Birr precision) |
+| **DevOps** | Docker, Docker Compose, Git, Environment variables (`.env`) |
+| **Regional Defaults** | Timezone: `Africa/Addis_Ababa` (UTC+3) • Currency: Ethiopian Birr (`ETB`) |
+
+---
+
+## 2. Project Directory Structure
+
+```
+Ledger/
+├── .env.example                     # Root environment variables template
+├── .gitignore                       # Multi-stack git ignore configuration
+├── docker-compose.yml               # Multi-container orchestration (DB, API, Web)
+├── alembic.ini                      # Root Alembic migration configuration
+├── README.md                        # Project documentation and quickstart
+├── docs/                            # Comprehensive engineering specifications
+│   ├── REQUIREMENTS.md              # Functional & non-functional requirements
+│   ├── SYSTEM_ARCHITECTURE.md       # Architecture diagrams and design patterns
+│   ├── DATABASE_DESIGN.md           # Schema details and Mermaid ER diagram
+│   ├── PHASE_ROADMAP.md             # 6-phase development delivery plan
+│   └── OPEN_DECISIONS.md            # Documented business decisions for review
+├── backend/
+│   ├── .env.example                 # Backend environment template
+│   ├── Dockerfile                   # Python 3.11 slim container definition
+│   ├── requirements.txt             # Locked Python backend dependencies
+│   ├── alembic.ini                  # Backend-specific Alembic runner
+│   ├── migrations/                  # Database migration scripts and env.py
+│   │   ├── env.py                   # Alembic environment with metadata binding
+│   │   ├── script.py.mako           # Migration script generation template
+│   │   └── versions/                # Generated revision versions
+│   ├── app/
+│   │   ├── main.py                  # FastAPI app factory, CORS & request logging
+│   │   ├── api/
+│   │   │   ├── router.py            # API V1 router aggregation
+│   │   │   └── routes/
+│   │   │       └── health.py        # Health-check endpoint (GET /api/health)
+│   │   ├── core/
+│   │   │   ├── config.py            # Pydantic BaseSettings & env parsing
+│   │   │   └── logging.py           # Structured application logging
+│   │   ├── db/
+│   │   │   ├── base.py              # DeclarativeBase base class
+│   │   │   └── session.py           # Engine pool, sessionmaker & get_db dependency
+│   │   ├── models/                  # SQLAlchemy 2.0 ORM models
+│   │   │   ├── user.py              # Users (Administrators, Sales Employees)
+│   │   │   ├── customer.py          # Customers (B2B clients, walk-ins)
+│   │   │   ├── product.py           # Products (Printing supplies catalog)
+│   │   │   ├── sale.py              # Sales (Master sales transactions)
+│   │   │   ├── sale_item.py         # Sale Items (Line items with price snapshot)
+│   │   │   ├── payment.py           # Payments (Cash, Bank, Mobile transfers)
+│   │   │   └── audit_log.py         # Audit Logs (Immutable mutation history)
+│   │   ├── schemas/
+│   │   │   └── health.py            # Pydantic schemas for API health response
+│   │   └── services/                # Business logic services (Phase 2+)
+│   └── tests/                       # Pytest test suite
+│       ├── conftest.py              # Test database engine and API TestClient
+│       ├── test_health.py           # Health endpoint and root route tests
+│       ├── test_models.py           # Model definitions and relationship tests
+│       └── test_config.py           # Settings and CORS parsing tests
+└── frontend/
+    ├── .env.example                 # Frontend environment template
+    ├── Dockerfile                   # Multi-stage production container build
+    ├── nginx.conf                   # Nginx reverse proxy for frontend container
+    ├── package.json                 # Node dependencies and scripts
+    ├── tsconfig.json                # TypeScript compiler configuration
+    ├── vite.config.ts               # Vite bundler and development proxy
+    ├── tailwind.config.js           # Custom Delgone navy and emerald color palette
+    ├── postcss.config.js            # PostCSS configuration for Tailwind
+    ├── index.html                   # HTML entrypoint with PWA meta tags
+    ├── public/
+    │   ├── manifest.webmanifest     # PWA standalone manifest configuration
+    │   └── icons/                   # App launcher icons (SVG / PNG)
+    └── src/
+        ├── App.tsx                  # React Router navigation tree
+        ├── main.tsx                 # React DOM mount and PWA registration
+        ├── index.css                # Tailwind directives and base typography
+        ├── components/              # Header, Sidebar, StatCard, StatusBadge
+        ├── layouts/                 # AppLayout shell with mobile drawer
+        ├── pages/                   # Screen views (Dashboard, New Sale, Ledger...)
+        ├── hooks/                   # useApiHealth hook
+        ├── services/                # Axios instance (api.ts) & healthService.ts
+        ├── types/                   # TypeScript interfaces
+        └── utils/                   # Currency formatters & PWA helpers
+```
+
+---
+
+## 3. Quickstart & Local Setup
+
+### Prerequisites
+- **Git**
+- **Docker & Docker Compose** (Recommended for local containerized development)
+- *Alternatively for native execution:* **Python 3.11+**, **Node.js 18+**, and **PostgreSQL 16+**.
+
+---
+
+### Option A: Running with Docker Compose (Recommended)
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repo-url>
+   cd Ledger
+   ```
+
+2. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Start the containers:**
+   ```bash
+   docker compose up --build -d
+   ```
+
+4. **Apply database migrations:**
+   ```bash
+   docker compose exec backend alembic upgrade head
+   ```
+
+5. **Access the application:**
+   - **Frontend Application Shell:** [http://localhost:5173](http://localhost:5173)
+   - **Backend API Docs (Swagger):** [http://localhost:8000/docs](http://localhost:8000/docs)
+   - **API Health Check Endpoint:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
+
+---
+
+### Option B: Running Natively on Local Machine
+
+#### 1. Backend Setup (FastAPI & PostgreSQL)
+
+```bash
+cd backend
+
+# Create and activate Python virtual environment
+python -m venv .venv
+
+# On Windows:
+.venv\Scripts\activate
+# On Linux/macOS:
+# source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your local PostgreSQL credentials
+
+# Run database migrations
+alembic upgrade head
+
+# Start FastAPI development server
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+#### 2. Frontend Setup (React & Vite)
+
+```bash
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Configure environment
+cp .env.example .env
+
+# Start Vite development server
+npm run dev
+```
+
+The frontend will run at [http://localhost:5173](http://localhost:5173) and automatically proxy `/api` requests to the FastAPI backend.
+
+---
+
+## 4. Verification & Testing
+
+### Backend Test Suite
+Run the automated pytest suite (tests model definitions, arithmetic safety, and health endpoints):
+```bash
+# From workspace root or backend directory:
+pytest backend/tests -v
+```
+
+### Frontend Build & Typecheck
+Verify TypeScript compilation and bundle generation:
+```bash
+cd frontend
+npm run build
+```
+
+### Health Check Verification
+Query the health check endpoint using curl or a web browser:
+```bash
+curl http://localhost:8000/api/health
+```
+
+Expected JSON response:
+```json
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "environment": "development",
+  "database_connected": true,
+  "timezone": "Africa/Addis_Ababa",
+  "currency": "ETB",
+  "timestamp": "2026-11-16T08:30:00Z"
+}
+```
+
+---
+
+## 5. Engineering Documentation Index
+
+- [System Requirements Specification](docs/REQUIREMENTS.md) — Functional and non-functional requirements, user roles, sales workflows, and business rules.
+- [System Architecture Specification](docs/SYSTEM_ARCHITECTURE.md) — 3-tier architecture, technology justifications, security, and PWA roadmap.
+- [Database Design & Schema](docs/DATABASE_DESIGN.md) — Normalized table structures, data types, indexes, and Mermaid ER diagram.
+- [Development Phase Roadmap](docs/PHASE_ROADMAP.md) — 6-phase implementation roadmap and deliverable checklist.
+- [Open Decisions Log](docs/OPEN_DECISIONS.md) — Decisions on receipt book numbering, VAT vs. TOT tax policies, and credit controls.
+
+---
+
+## 6. License & Ownership
+
+Confidential and proprietary business software engineered for **Delgone Trading PLC**, Addis Ababa, Ethiopia. All rights reserved.

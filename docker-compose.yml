@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: delgone_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-delgone_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-delgone_secure_password_replace_in_prod}
+      POSTGRES_DB: ${POSTGRES_DB:-delgone_ledger}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - delgone_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-delgone_user} -d ${POSTGRES_DB:-delgone_ledger}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - delgone_network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: delgone_backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      PROJECT_NAME: ${PROJECT_NAME:-Delgone Digital Sales Ledger}
+      API_V1_STR: ${API_V1_STR:-/api}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Africa/Addis_Ababa}
+      APP_CURRENCY: ${APP_CURRENCY:-ETB}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-delgone_user}:${POSTGRES_PASSWORD:-delgone_secure_password_replace_in_prod}@db:5432/${POSTGRES_DB:-delgone_ledger}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change_this_to_a_super_secret_key_in_production_32_bytes_long}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
+      CORS_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173","http://localhost:3000","http://localhost:80"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - delgone_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: delgone_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - delgone_network
+
+volumes:
+  delgone_postgres_data:
+    name: delgone_postgres_data
+
+networks:
+  delgone_network:
+    name: delgone_network
+    driver: bridge
