@@ -1,7 +1,10 @@
 import json
-from typing import List, Union
+import os
+from typing import Any, List, Union
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 class Settings(BaseSettings):
@@ -34,6 +37,18 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://localhost:3000",
     ]
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def resolve_sqlite_url(cls, v: Union[str, Any]) -> str:
+        if isinstance(v, str) and v.startswith("sqlite:///") and not v.startswith("sqlite:///:memory:"):
+            path_part = v.replace("sqlite:///", "")
+            if path_part.startswith("./"):
+                path_part = path_part[2:]
+            if not os.path.isabs(path_part):
+                abs_db = os.path.normpath(os.path.join(BACKEND_DIR, path_part))
+                return f"sqlite:///{abs_db.replace(os.sep, '/')}"
+        return str(v)
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

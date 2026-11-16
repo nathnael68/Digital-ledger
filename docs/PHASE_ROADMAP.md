@@ -51,7 +51,7 @@ The transformation from Delgone's handwritten sales books to an enterprise-grade
 
 ## Detailed Phase Breakdown
 
-### Phase 1: Technical Foundation & Application Shell (Current Assignment)
+### Phase 1: Technical Foundation & Application Shell (Completed)
 - [x] Document functional and non-functional requirements (`docs/REQUIREMENTS.md`).
 - [x] Formulate system architecture and technical decisions (`docs/SYSTEM_ARCHITECTURE.md`).
 - [x] Design normalized relational database schema with Mermaid ER diagram (`docs/DATABASE_DESIGN.md`).
@@ -66,18 +66,16 @@ The transformation from Delgone's handwritten sales books to an enterprise-grade
 
 ---
 
-### Phase 2: Authentication, Role-Based Access, & Core Catalogs
-- **Authentication System:**
-  - Login endpoint (`POST /api/v1/auth/login`) with JWT token issuance.
-  - Current user endpoint (`GET /api/v1/auth/me`).
-  - Secure password hashing with Argon2 / Bcrypt.
-  - Role-based route guards in React frontend.
-- **User Management (Admin Only):**
-  - CRUD for employee accounts.
-  - Activate/deactivate employee accounts.
-  - Role assignment (`Administrator`, `Sales Employee`).
-- **Product Catalog Management:**
-  - Catalog list, search, add, edit, and archive (`/api/v1/products`).
+### Phase 2: Authentication, Employee Management & Dashboard (Completed)
+- [x] Secure authentication with Bcrypt and signed JWT tokens in HttpOnly SameSite cookies (`POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`).
+- [x] Anti-brute force sliding-window login rate limiting (5 failed attempts per 15 mins).
+- [x] Role-Based Access Control (RBAC): `Administrator` and `Sales Employee` roles enforced on backend and frontend.
+- [x] Employee account management (`/api/users` CRUD, role assignment, status toggling, password resets, self-deactivation protection).
+- [x] First-administrator secure bootstrap CLI procedure (`backend/scripts/bootstrap_admin.py`).
+- [x] Real-time operational dashboard (`GET /api/dashboard`) with 6 summary cards, 7-day sales trend, payment distribution, and recent transactions.
+- [x] Financial data segregation (gross sales vs cash collections vs bank transfers vs credit balances; voided transaction exclusion).
+- [x] Responsive navigation shell with user profile dropdown, active status badges, and role-filtered navigation items.
+- [x] Comprehensive test suites (21 backend pytest tests + 6 frontend Vitest tests).
   - Unit of measure definition (pcs, ream, roll, pack, box).
   - Price management with active status toggles.
 - **Customer Directory:**

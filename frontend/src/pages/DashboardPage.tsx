@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Banknote,
@@ -7,49 +7,83 @@ import {
   PlusCircle,
   Receipt,
   RefreshCw,
-  Server,
-  Database,
-  Globe,
-  Clock,
-  Coins,
-  CheckCircle2,
+  TrendingUp,
+  PieChart,
   AlertCircle,
+  Scale,
+  Hash,
 } from 'lucide-react';
-import { useApiHealth } from '../hooks/useApiHealth';
+import { useAuth } from '../context/AuthContext';
+import { dashboardService } from '../services/dashboardService';
+import { DashboardResponse } from '../types/dashboard';
 import { StatCard } from '../components/StatCard';
 import { StatusBadge } from '../components/StatusBadge';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatDateTime } from '../utils/formatters';
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data, loading, error, latencyMs, lastChecked, refetch } = useApiHealth();
+  const { user } = useAuth();
+
+  const [data, setData] = useState<DashboardResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+
+  const fetchDashboard = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await dashboardService.getDashboard();
+      setData(res);
+      setLastRefreshed(new Date());
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch dashboard metrics';
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  // Calculate highest sale value in 7 days for relative chart scaling
+  const maxDaySales = data?.trend_7_days
+    ? Math.max(...data.trend_7_days.map((d) => Number(d.total_sales)), 100)
+    : 100;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Top Banner / Welcome */}
+      {/* Top Banner & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Counter Sales Dashboard
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              Counter Sales Dashboard
+            </h1>
+            <span className="text-xs text-slate-500 font-medium hidden sm:inline-block">
+              • Welcome, {user?.full_name}
+            </span>
+          </div>
           <p className="text-sm text-slate-500 mt-1">
-            Delgone Trading PLC • Centralized Digital Sales Ledger & Physical Receipt Reconciliation
+            Real-time daily ledger calculations, cash & bank reconciliation, and credit monitoring.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => refetch()}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors shadow-sm disabled:opacity-50"
+            onClick={() => fetchDashboard()}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Check Connection
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
           </button>
           <button
             type="button"
             onClick={() => navigate('/sales/new')}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-delgone-navy-900 text-white hover:bg-delgone-navy-800 active:bg-delgone-navy-950 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-delgone-navy-900 text-white hover:bg-delgone-navy-800 transition-colors shadow-sm"
           >
             <PlusCircle className="w-4 h-4 text-emerald-400" />
             New Sale (F2)
@@ -57,241 +91,271 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Backend API & Database Connection Card */}
-      <div className="rounded-xl border border-slate-200/90 bg-white p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
-              <Server className="w-5 h-5 text-delgone-navy-800" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-900">
-                  Backend API & Database Connectivity
-                </h2>
-                {loading ? (
-                  <StatusBadge status="pending" label="Pinging API..." />
-                ) : error ? (
-                  <StatusBadge status="error" label="Connection Failed" />
-                ) : data?.database_connected ? (
-                  <StatusBadge status="healthy" label="Fully Operational" />
-                ) : (
-                  <StatusBadge status="degraded" label="API Active • DB Disconnected" />
-                )}
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Target endpoint: <code className="font-mono text-slate-700">GET /api/health</code>
-              </p>
-            </div>
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-between text-xs text-rose-800">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+            <span>{error}</span>
           </div>
-          {lastChecked && (
-            <span className="text-xs text-slate-400 font-mono">
-              Last checked: {lastChecked.toLocaleTimeString()}
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={() => fetchDashboard()}
+            className="underline font-semibold hover:text-rose-900"
+          >
+            Retry
+          </button>
         </div>
+      )}
 
-        {/* Health Details Grid */}
-        <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <Server className="w-3.5 h-3.5 text-slate-400" />
-              API Status
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800">
-              {loading ? 'Checking...' : error ? 'Offline' : data?.status.toUpperCase() || 'UNKNOWN'}
-            </div>
-          </div>
+      {/* 6 SUMMARY CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
+        <StatCard
+          title="Today's Sales"
+          value={formatCurrency(data?.summary.today_sales ?? 0)}
+          subtitle="Finalized non-voided sales"
+          icon={Receipt}
+          badge={<StatusBadge status="active" label="Today" />}
+        />
+        <StatCard
+          title="Cash Received"
+          value={formatCurrency(data?.summary.cash_received ?? 0)}
+          subtitle="Physical cash in counter"
+          icon={Banknote}
+        />
+        <StatCard
+          title="Bank Received"
+          value={formatCurrency(data?.summary.bank_received ?? 0)}
+          subtitle="CBE, Awash & Telebirr"
+          icon={Building2}
+        />
+        <StatCard
+          title="Credit Sales"
+          value={formatCurrency(data?.summary.credit_sales ?? 0)}
+          subtitle="Sales released on credit"
+          icon={CreditCard}
+        />
+        <StatCard
+          title="Outstanding Balance"
+          value={formatCurrency(data?.summary.outstanding_balance ?? 0)}
+          subtitle="Uncollected customer dues"
+          icon={Scale}
+        />
+        <StatCard
+          title="Total Transactions"
+          value={data?.summary.total_transactions ?? 0}
+          subtitle="Recorded today"
+          icon={Hash}
+        />
+      </div>
 
-          <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <Database className="w-3.5 h-3.5 text-slate-400" />
-              PostgreSQL
+      {/* CHARTS ROW */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 7-DAY SALES TREND */}
+        <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-delgone-navy-800" />
+                <h2 className="text-sm font-bold text-slate-900">
+                  Seven-Day Sales Trend (ETB)
+                </h2>
+              </div>
+              <span className="text-xs text-slate-400 font-mono">
+                {lastRefreshed ? `Updated ${lastRefreshed.toLocaleTimeString()}` : ''}
+              </span>
             </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 flex items-center gap-1">
-              {loading ? (
-                'Checking...'
-              ) : data?.database_connected ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Connected</span>
-                </>
+
+            {/* Bar Chart Container */}
+            <div className="mt-6">
+              {isLoading ? (
+                <div className="h-44 flex items-center justify-center text-xs text-slate-400">
+                  <RefreshCw className="w-5 h-5 animate-spin text-delgone-navy-800 mr-2" />
+                  Loading 7-day trend...
+                </div>
               ) : (
-                <>
-                  <AlertCircle className="w-4 h-4 text-amber-600" />
-                  <span>Pending</span>
-                </>
+                <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end h-44 pt-6 pb-2">
+                  {data?.trend_7_days.map((item) => {
+                    const heightPercent = Math.max(
+                      Math.round((Number(item.total_sales) / maxDaySales) * 100),
+                      6
+                    );
+                    const hasSales = Number(item.total_sales) > 0;
+                    return (
+                      <div
+                        key={item.date}
+                        className="flex flex-col items-center justify-end h-full group"
+                      >
+                        {/* Hover Tooltip Value */}
+                        <div className="text-[10px] font-mono text-slate-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {formatCurrency(item.total_sales)}
+                        </div>
+                        {/* Bar */}
+                        <div className="w-full max-w-[36px] bg-slate-100 rounded-t-md relative flex items-end overflow-hidden h-32">
+                          <div
+                            style={{ height: `${heightPercent}%` }}
+                            className={`w-full rounded-t-md transition-all duration-500 ${
+                              hasSales
+                                ? 'bg-delgone-navy-900 group-hover:bg-emerald-600'
+                                : 'bg-slate-200'
+                            }`}
+                          />
+                        </div>
+                        {/* Day Label */}
+                        <div className="mt-2 text-[11px] font-medium text-slate-500 text-center truncate w-full">
+                          {item.day_label.split(',')[0]}
+                        </div>
+                        <div className="text-[9px] text-slate-400 font-mono">
+                          {item.transaction_count} tx
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
 
-          <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              API Latency
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 font-mono">
-              {latencyMs !== null ? `${latencyMs} ms` : '-'}
-            </div>
-          </div>
-
-          <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <Globe className="w-3.5 h-3.5 text-slate-400" />
-              Environment
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800 capitalize">
-              {data?.environment || 'development'}
-            </div>
-          </div>
-
-          <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              Timezone
-            </div>
-            <div className="mt-1 text-sm font-semibold text-slate-800">
-              {data?.timezone || 'Africa/Addis_Ababa'}
-            </div>
-          </div>
-
-          <div className="rounded-lg bg-slate-50 p-3 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <Coins className="w-3.5 h-3.5 text-slate-400" />
-              Currency
-            </div>
-            <div className="mt-1 text-sm font-semibold text-emerald-700 font-bold">
-              {data?.currency || 'ETB'}
-            </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>Aggregated by Addis Ababa calendar date</span>
+            <span className="font-semibold text-slate-700">Currency: Ethiopian Birr (ETB)</span>
           </div>
         </div>
 
-        {error && (
-          <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-800">
-            <strong>Connection Notice:</strong> Unable to connect to backend API server at{' '}
-            <code className="font-mono bg-rose-100 px-1 py-0.5 rounded">{import.meta.env.VITE_API_BASE_URL || '/api'}</code>.
-            Ensure the FastAPI server is running (`uvicorn backend.app.main:app --reload`).
-          </div>
-        )}
-      </div>
-
-      {/* Daily Ledger KPI Metrics Placeholder (Phase 1 Baseline) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Daily Gross Sales"
-          value={formatCurrency(0)}
-          subtitle="Ready for Phase 2 live counter entries"
-          icon={Receipt}
-          badge={<StatusBadge status="pending" label="Shift Ready" />}
-        />
-        <StatCard
-          title="Cash Collections"
-          value={formatCurrency(0)}
-          subtitle="Physical cash in counter drawer"
-          icon={Banknote}
-        />
-        <StatCard
-          title="Bank & Mobile Transfers"
-          value={formatCurrency(0)}
-          subtitle="CBE, Awash, Telebirr & CBE Birr"
-          icon={Building2}
-        />
-        <StatCard
-          title="Outstanding Credit"
-          value={formatCurrency(0)}
-          subtitle="Active customer credit balance"
-          icon={CreditCard}
-        />
-      </div>
-
-      {/* Phase 1 Technical Foundation Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900 mb-3">
-            Phase 1 Technical Foundation Deliverables
-          </h3>
-          <p className="text-sm text-slate-600 mb-4">
-            The technical foundation for <strong>Delgone Digital Sales Ledger</strong> has been established.
-            The relational database models, API architecture, migration pipelines, and responsive frontend shell are configured.
-          </p>
-
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="text-sm font-semibold text-slate-900">
-                  SQLAlchemy 2.0 Normalized Schema & Models
-                </span>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Users, Customers, Products, Sales, Sale Items, Payments, and Audit Logs models created with UUID primary keys and NUMERIC(12,2) Ethiopian Birr precision.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="text-sm font-semibold text-slate-900">
-                  Dual Physical-to-Digital Reconciliation Design
-                </span>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Mandatory capture of handwritten paper receipt numbers alongside auto-generated digital sequential sale IDs (DLG-YYYYMM-XXXX).
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="text-sm font-semibold text-slate-900">
-                  Alembic Migration Pipeline & Docker Compose
-                </span>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Alembic configured for repeatable schema versioning. Docker Compose prepared with PostgreSQL persistent storage.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Links & Next Steps */}
+        {/* PAYMENT METHOD DISTRIBUTION */}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-bold text-slate-900 mb-2">
-              Next Up: Phase 2
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Upon approval of Phase 1, Phase 2 will implement:
-            </p>
-            <ul className="text-xs text-slate-600 space-y-2">
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-delgone-navy-800" />
-                JWT Authentication & Role-Based Access Control
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-delgone-navy-800" />
-                Product Catalog Management & Pricing
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-delgone-navy-800" />
-                Customer Directory & Walk-in Profiles
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-delgone-navy-800" />
-                User Administration for Delgone Employees
-              </li>
-            </ul>
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <PieChart className="w-4 h-4 text-delgone-navy-800" />
+              <h2 className="text-sm font-bold text-slate-900">
+                Payment Distribution
+              </h2>
+            </div>
+
+            <div className="mt-5">
+              {isLoading ? (
+                <div className="h-40 flex items-center justify-center text-xs text-slate-400">
+                  <RefreshCw className="w-5 h-5 animate-spin text-delgone-navy-800 mr-2" />
+                  Calculating distribution...
+                </div>
+              ) : !data?.payment_methods || data.payment_methods.length === 0 ? (
+                <div className="h-40 flex flex-col items-center justify-center text-center p-4">
+                  <PieChart className="w-8 h-8 text-slate-300 mb-2" />
+                  <p className="text-xs font-semibold text-slate-700">No payment records</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Payments recorded in Phase 3 will populate this breakdown.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  {data.payment_methods.map((method) => (
+                    <div key={method.method} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-medium text-slate-800">{method.method_label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-slate-600">
+                            {formatCurrency(method.total_amount)}
+                          </span>
+                          <span className="font-bold text-slate-900">{method.percentage}%</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${method.percentage}%` }}
+                          className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => navigate('/sales')}
-              className="w-full text-center py-2 px-3 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
-            >
-              Open Sales Ledger
-            </button>
+          <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Includes Cash, Bank Transfers, and Mobile Money</span>
           </div>
+        </div>
+      </div>
+
+      {/* RECENT TRANSACTIONS TABLE */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">
+              Recent Counter Transactions
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Latest sales recorded across active counter shifts
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/sales')}
+            className="text-xs font-semibold text-delgone-navy-800 hover:text-delgone-navy-950 hover:underline"
+          >
+            View Complete Ledger &rarr;
+          </button>
+        </div>
+
+        {/* Transactions Table or Empty State */}
+        <div className="mt-4 overflow-x-auto">
+          {isLoading ? (
+            <div className="p-12 text-center text-slate-500 flex flex-col items-center gap-2">
+              <RefreshCw className="w-5 h-5 animate-spin text-delgone-navy-800" />
+              <span className="text-xs">Loading transactions...</span>
+            </div>
+          ) : !data?.recent_transactions || data.recent_transactions.length === 0 ? (
+            <div className="p-12 text-center">
+              <Receipt className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+              <h3 className="text-sm font-bold text-slate-800">No sales recorded yet</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                The digital sales ledger is empty and fully prepared. Sales recording and paper receipt reconciliation will be activated in Phase 3.
+              </p>
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+                  <th className="py-2.5 px-3">Sale #</th>
+                  <th className="py-2.5 px-3">Date</th>
+                  <th className="py-2.5 px-3">Customer</th>
+                  <th className="py-2.5 px-3">Paper Receipt #</th>
+                  <th className="py-2.5 px-3">Cashier</th>
+                  <th className="py-2.5 px-3">Amount</th>
+                  <th className="py-2.5 px-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {data.recent_transactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                      {tx.sale_number}
+                    </td>
+                    <td className="py-3 px-3 text-slate-500">
+                      {formatDateTime(tx.sale_date)}
+                    </td>
+                    <td className="py-3 px-3 text-slate-800">
+                      {tx.customer_name || <span className="text-slate-400">Walk-in</span>}
+                    </td>
+                    <td className="py-3 px-3 font-mono text-slate-600">
+                      {tx.paper_receipt_number || '-'}
+                    </td>
+                    <td className="py-3 px-3 text-slate-600">
+                      {tx.created_by_name}
+                    </td>
+                    <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                      {formatCurrency(tx.grand_total)}
+                    </td>
+                    <td className="py-3 px-3">
+                      <StatusBadge status={tx.payment_status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

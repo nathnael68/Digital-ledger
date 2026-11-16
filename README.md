@@ -169,6 +169,9 @@ cp .env.example .env
 # Run database migrations
 alembic upgrade head
 
+# Bootstrap the initial Administrator account securely (prompted or via flags)
+python scripts/bootstrap_admin.py --username admin --full-name "Managing Director" --password "YourSecurePassword123!"
+
 # Start FastAPI development server
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
@@ -194,44 +197,35 @@ The frontend will run at [http://localhost:5173](http://localhost:5173) and auto
 
 ## 4. Verification & Testing
 
-### Backend Test Suite
-Run the automated pytest suite (tests model definitions, arithmetic safety, and health endpoints):
+### Backend Test Suite (Pytest)
+Run the automated pytest suite (tests authentication, rate limiting, permissions, model integrity, and real database dashboard calculations):
 ```bash
-# From workspace root or backend directory:
+# Run all 21 backend tests:
 pytest backend/tests -v
 ```
 
-### Frontend Build & Typecheck
+### Frontend Test Suite (Vitest)
+Verify frontend components, authentication form validation, and role-based navigation:
+```bash
+cd frontend
+npm test
+```
+
+### Frontend Production Build & Typecheck
 Verify TypeScript compilation and bundle generation:
 ```bash
 cd frontend
 npm run build
 ```
 
-### Health Check Verification
-Query the health check endpoint using curl or a web browser:
-```bash
-curl http://localhost:8000/api/health
-```
-
-Expected JSON response:
-```json
-{
-  "status": "healthy",
-  "version": "1.0.0",
-  "environment": "development",
-  "database_connected": true,
-  "timezone": "Africa/Addis_Ababa",
-  "currency": "ETB",
-  "timestamp": "2026-11-16T08:30:00Z"
-}
-```
-
 ---
 
 ## 5. Engineering Documentation Index
 
-- [System Requirements Specification](docs/REQUIREMENTS.md) — Functional and non-functional requirements, user roles, sales workflows, and business rules.
+- [Authentication & Session Architecture](docs/AUTHENTICATION.md) — HttpOnly cookie strategy, bcrypt hashing, rate limiting, and bootstrap procedure.
+- [Role-Based Access Control (RBAC)](docs/USER_ROLES_AND_PERMISSIONS.md) — Administrator vs Sales Employee permissions and defense-in-depth guards.
+- [Financial Dashboard Specification](docs/DASHBOARD.md) — Real-time formulas, cash vs bank segregation, and 7-day trend calculations.
+- [System Requirements Specification](docs/REQUIREMENTS.md) — Functional and non-functional requirements, sales workflows, and business rules.
 - [System Architecture Specification](docs/SYSTEM_ARCHITECTURE.md) — 3-tier architecture, technology justifications, security, and PWA roadmap.
 - [Database Design & Schema](docs/DATABASE_DESIGN.md) — Normalized table structures, data types, indexes, and Mermaid ER diagram.
 - [Development Phase Roadmap](docs/PHASE_ROADMAP.md) — 6-phase implementation roadmap and deliverable checklist.

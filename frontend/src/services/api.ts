@@ -4,17 +4,18 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
+  withCredentials: true, // Enables HttpOnly cookie transmission across requests
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor: Prepares authorization header for Phase 2 JWT
+// Request interceptor: Support optional Bearer token if present
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('delgone_access_token');
-    if (token && config.headers) {
+    const token = sessionStorage.getItem('delgone_session_token');
+    if (token && config.headers && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -24,7 +25,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor: Uniform error handling
+// Response interceptor: Uniform error extraction
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {

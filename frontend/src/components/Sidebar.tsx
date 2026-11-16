@@ -5,60 +5,84 @@ import {
   PlusCircle,
   Receipt,
   Users,
+  UserCog,
   BarChart3,
   Settings,
   X,
   BookOpen,
   ShieldCheck,
+  Shield,
 } from 'lucide-react';
 import { NavItem } from '../types/navigation';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const navItems: NavItem[] = [
-  {
-    title: 'Dashboard',
-    path: '/',
-    icon: LayoutDashboard,
-    description: 'System overview & daily status',
-  },
-  {
-    title: 'New Sale',
-    path: '/sales/new',
-    icon: PlusCircle,
-    badge: 'F2',
-    description: 'Record counter sale transaction',
-  },
-  {
-    title: 'Sales Ledger',
-    path: '/sales',
-    icon: Receipt,
-    description: 'Digital sales log & receipt lookup',
-  },
-  {
-    title: 'Customers',
-    path: '/customers',
-    icon: Users,
-    description: 'Customer directory & balances',
-  },
-  {
-    title: 'Reports',
-    path: '/reports',
-    icon: BarChart3,
-    description: 'Daily closeout & sales summaries',
-  },
-  {
-    title: 'Settings',
-    path: '/settings',
-    icon: Settings,
-    description: 'User management & system preferences',
-  },
-];
-
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
+  const baseNavItems: NavItem[] = [
+    {
+      title: 'Dashboard',
+      path: '/',
+      icon: LayoutDashboard,
+      description: 'System overview & daily status',
+    },
+    {
+      title: 'New Sale',
+      path: '/sales/new',
+      icon: PlusCircle,
+      badge: 'F2',
+      description: 'Record counter sale transaction',
+    },
+    {
+      title: 'Sales Ledger',
+      path: '/sales',
+      icon: Receipt,
+      description: 'Digital sales log & receipt lookup',
+    },
+    {
+      title: 'Customers',
+      path: '/customers',
+      icon: Users,
+      description: 'Customer directory & balances',
+    },
+    {
+      title: 'Reports',
+      path: '/reports',
+      icon: BarChart3,
+      description: 'Daily closeout & sales summaries',
+    },
+  ];
+
+  // Admin-only nav item
+  const adminNavItems: NavItem[] = isAdmin
+    ? [
+        {
+          title: 'Employees',
+          path: '/employees',
+          icon: UserCog,
+          badge: 'Admin',
+          description: 'Employee directory & security roles',
+        },
+      ]
+    : [];
+
+  const footerNavItems: NavItem[] = [
+    {
+      title: 'Settings',
+      path: '/settings',
+      icon: Settings,
+      description: 'System preferences & receipt series',
+    },
+  ];
+
+  const allNavItems = [...baseNavItems, ...adminNavItems, ...footerNavItems];
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -100,15 +124,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Currency & Mode Indicator */}
+        {/* Currency & Role Indicator */}
         <div className="px-6 py-3 bg-slate-950/40 border-b border-slate-800/80 flex items-center justify-between text-xs text-slate-300">
-          <span className="text-slate-400">Currency</span>
-          <span className="font-bold tracking-wide text-emerald-400">ETB (Birr)</span>
+          <span className="text-slate-400">Operating Role</span>
+          <span className="font-bold tracking-wide flex items-center gap-1 text-emerald-400">
+            {isAdmin ? (
+              <>
+                <Shield className="w-3 h-3 text-purple-400" />
+                <span className="text-purple-300">Administrator</span>
+              </>
+            ) : (
+              <span>Sales Employee</span>
+            )}
+          </span>
         </div>
 
         {/* Navigation Links */}
         <nav className="flex-1 space-y-1.5 px-3 py-4 overflow-y-auto">
-          {navItems.map((item) => (
+          {allNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -134,7 +167,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <span className="truncate">{item.title}</span>
                   </div>
                   {item.badge && (
-                    <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                    <span
+                      className={`ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                        item.badge === 'Admin'
+                          ? 'bg-purple-950 text-purple-300 border-purple-800'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -148,10 +187,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="p-4 border-t border-slate-800 bg-slate-950/30">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Phase 1 Foundation Ready</span>
+            <span>Delgone Counter Security Active</span>
           </div>
           <div className="mt-1 text-[11px] text-slate-500">
-            Delgone Trading PLC • v1.0.0
+            Delgone Trading PLC • Phase 2 Verified
           </div>
         </div>
       </aside>

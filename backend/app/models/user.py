@@ -30,6 +30,12 @@ class User(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    last_login_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    password_changed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Relationships
     created_sales: Mapped[List["Sale"]] = relationship(
