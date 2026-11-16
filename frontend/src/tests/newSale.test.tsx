@@ -15,12 +15,13 @@ describe('NewSalePage Component', () => {
         role: 'sales_employee',
         is_active: true,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
       isAuthenticated: true,
       isLoading: false,
       login: vi.fn(),
       logout: vi.fn(),
-      refreshUser: vi.fn(),
+      refreshProfile: vi.fn(),
     });
 
     vi.spyOn(SaleService.saleService, 'searchProducts').mockResolvedValue([
