@@ -43,7 +43,7 @@ def test_products_and_customers_search(client: TestClient, db_session: Session):
     assert c_resp.status_code == 200
     customers = c_resp.json()
     assert len(customers) > 0
-    assert customers[0]["name"] == "Abyssinia Graphic Design & Print"
+    assert any("Abyssinia" in (c.get("company_name") or c["name"]) for c in customers)
 
     # 3. Quick customer creation
     new_c_resp = client.post(

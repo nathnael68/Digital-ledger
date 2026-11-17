@@ -10,8 +10,10 @@ export interface Product {
 export interface Customer {
   id: string;
   name: string;
+  company_name?: string | null;
   phone?: string | null;
   address?: string | null;
+  is_active?: boolean;
 }
 
 export interface SaleItemInput {
@@ -78,6 +80,8 @@ export interface SaleDetail {
   fs_number?: string | null;
   customer_id?: string | null;
   customer_name?: string | null;
+  customer_company_name?: string | null;
+  customer_phone?: string | null;
   sale_date: string;
   subtotal: number | string;
   discount: number | string;
@@ -128,6 +132,10 @@ export interface SaleQueryParams {
   created_by?: string;
   date_from?: string;
   date_to?: string;
+  transaction_status?: 'active' | 'voided' | 'all';
+  has_balance?: boolean;
+  sort_by?: 'sale_date' | 'sale_number' | 'fs_number' | 'customer_name' | 'grand_total' | 'outstanding_balance';
+  sort_order?: 'asc' | 'desc';
   page?: number;
   page_size?: number;
 }

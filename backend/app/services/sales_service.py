@@ -184,6 +184,8 @@ def build_sale_detail_response(sale: Sale) -> SaleDetailResponse:
         fs_number=sale.fs_number,
         customer_id=sale.customer_id,
         customer_name=sale.customer.name if sale.customer else None,
+        customer_company_name=sale.customer.company_name if sale.customer else None,
+        customer_phone=sale.customer.phone if sale.customer else None,
         sale_date=sale.sale_date,
         subtotal=sale.subtotal,
         discount=sale.discount,
@@ -235,6 +237,11 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> SaleDet
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Selected customer does not exist",
+            )
+        if not cust.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Customer '{cust.name}' is inactive and cannot be selected for new transactions. Please reactivate the account first.",
             )
 
     # 3. Financial calculations
@@ -365,16 +372,21 @@ def list_sales(
     search: Optional[str] = None,
     payment_status: Optional[str] = None,
     payment_method: Optional[str] = None,
+    transaction_status: Optional[str] = None,
+    has_balance: Optional[bool] = None,
     customer_id: Optional[uuid.UUID] = None,
     created_by: Optional[uuid.UUID] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
+    sort_by: str = "sale_date",
+    sort_order: str = "desc",
     page: int = 1,
     page_size: int = 15,
 ) -> SaleListResponse:
     """
     Searchable, filtered, and paginated sales ledger query.
     Avoids N+1 queries using selectinload and joinedload.
+    Supports multi-field search and advanced sorting/filtering.
     """
     query = select(Sale).options(
         joinedload(Sale.customer),
@@ -387,13 +399,16 @@ def list_sales(
     if search:
         search_pattern = f"%{search.strip().lower()}%"
         query = query.outerjoin(Customer, Sale.customer_id == Customer.id)
-        # Also check product line item descriptions
+        # Check sale number, FS number, paper receipt, customer name, company name, phone, alt phone, and item descriptions
         query = query.where(
             or_(
                 func.lower(Sale.sale_number).like(search_pattern),
                 func.lower(Sale.fs_number).like(search_pattern),
                 func.lower(Sale.paper_receipt_number).like(search_pattern),
                 func.lower(Customer.name).like(search_pattern),
+                func.lower(Customer.company_name).like(search_pattern),
+                func.lower(Customer.phone).like(search_pattern),
+                func.lower(Customer.alt_phone).like(search_pattern),
                 Sale.id.in_(
                     select(SaleItem.sale_id).where(
                         func.lower(SaleItem.description_snapshot).like(search_pattern)
@@ -412,6 +427,30 @@ def list_sales(
             )
         )
 
+    if transaction_status:
+        if transaction_status.lower() == "active":
+            query = query.where(Sale.voided_at.is_(None))
+        elif transaction_status.lower() == "voided":
+            query = query.where(Sale.voided_at.is_not(None))
+
+    paid_subquery = (
+        select(func.coalesce(func.sum(Payment.amount), Decimal("0.00")))
+        .where(Payment.sale_id == Sale.id)
+        .scalar_subquery()
+    )
+
+    if has_balance is True:
+        # Only sales where remaining balance > 0 (and not voided)
+        query = query.where(
+            Sale.voided_at.is_(None),
+            (Sale.grand_total - paid_subquery) > Decimal("0.00"),
+        )
+    elif has_balance is False:
+        # Fully paid sales
+        query = query.where(
+            (Sale.grand_total - paid_subquery) <= Decimal("0.00")
+        )
+
     if customer_id:
         query = query.where(Sale.customer_id == customer_id)
 
@@ -428,8 +467,30 @@ def list_sales(
     count_stmt = select(func.count()).select_from(query.order_by(None).subquery())
     total = db.scalar(count_stmt) or 0
 
-    # Paginate and order by newest first
-    query = query.order_by(Sale.sale_date.desc()).offset((page - 1) * page_size).limit(page_size)
+    # Determine order expression
+    if sort_by == "sales_id" or sort_by == "sale_number":
+        order_col = Sale.sale_number
+    elif sort_by == "fs_number":
+        order_col = func.coalesce(Sale.fs_number, "")
+    elif sort_by == "grand_total":
+        order_col = Sale.grand_total
+    elif sort_by == "customer_name" or sort_by == "customer":
+        # Ensure Customer table joined if not already
+        if not search:
+            query = query.outerjoin(Customer, Sale.customer_id == Customer.id)
+        order_col = func.coalesce(Customer.name, "Walk-in")
+    elif sort_by == "outstanding_balance":
+        order_col = Sale.grand_total - paid_subquery
+    else:
+        order_col = Sale.sale_date
+
+    if sort_order.lower() == "asc":
+        query = query.order_by(order_col.asc(), Sale.id.asc())
+    else:
+        query = query.order_by(order_col.desc(), Sale.id.desc())
+
+    # Paginate
+    query = query.offset((page - 1) * page_size).limit(page_size)
     sales = db.scalars(query).all()
 
     total_pages = max(1, math.ceil(total / page_size))

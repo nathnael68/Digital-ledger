@@ -12,6 +12,7 @@ import {
   BookOpen,
   ShieldCheck,
   Shield,
+  DollarSign,
 } from 'lucide-react';
 import { NavItem } from '../types/navigation';
 import { useAuth } from '../context/AuthContext';
@@ -49,7 +50,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       title: 'Customers',
       path: '/customers',
       icon: Users,
-      description: 'Customer directory & balances',
+      description: 'Customer directory & profiles',
+    },
+    {
+      title: 'Credit Balances',
+      path: '/customers/outstanding',
+      icon: DollarSign,
+      description: 'Receivables & aging breakdown',
     },
     {
       title: 'Reports',

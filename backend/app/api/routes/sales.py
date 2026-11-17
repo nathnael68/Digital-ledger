@@ -43,13 +43,17 @@ def record_new_sale(
 
 @router.get("", response_model=SaleListResponse)
 def get_sales_ledger(
-    search: Optional[str] = Query(None, description="Search by sale number, FS No, customer, paper receipt #, or item description"),
+    search: Optional[str] = Query(None, description="Search by sale number, FS No, customer name, company, phone, receipt #, or item description"),
     payment_status: Optional[str] = Query(None, description="Filter by status ('paid', 'partial', 'credit', 'voided')"),
-    payment_method: Optional[str] = Query(None, description="Filter by payment method ('cash', 'bank_transfer')"),
+    payment_method: Optional[str] = Query(None, description="Filter by payment method ('cash', 'bank_transfer', etc.)"),
+    transaction_status: Optional[str] = Query(None, description="Filter by transaction status ('all', 'active', 'voided')"),
+    has_balance: Optional[bool] = Query(None, description="Filter transactions with outstanding balance > 0 (True) or fully settled (False)"),
     customer_id: Optional[uuid.UUID] = Query(None, description="Filter by customer ID"),
     created_by: Optional[uuid.UUID] = Query(None, description="Filter by employee ID"),
     date_from: Optional[datetime] = Query(None, description="Filter sales after date"),
     date_to: Optional[datetime] = Query(None, description="Filter sales before date"),
+    sort_by: str = Query("sale_date", description="Field to sort by ('sale_date', 'sale_number', 'fs_number', 'customer_name', 'grand_total', 'outstanding_balance')"),
+    sort_order: str = Query("desc", description="Sort direction ('asc', 'desc')"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(15, ge=1, le=100, description="Items per page"),
     db: Session = Depends(get_db),
@@ -57,17 +61,21 @@ def get_sales_ledger(
 ) -> SaleListResponse:
     """
     Retrieves a paginated list of sales from the digital sales ledger.
-    Supports multi-field search and financial filters.
+    Supports multi-field search, multi-criteria financial filters, and deterministic sorting.
     """
     return list_sales(
         db=db,
         search=search,
         payment_status=payment_status,
         payment_method=payment_method,
+        transaction_status=transaction_status,
+        has_balance=has_balance,
         customer_id=customer_id,
         created_by=created_by,
         date_from=date_from,
         date_to=date_to,
+        sort_by=sort_by,
+        sort_order=sort_order,
         page=page,
         page_size=page_size,
     )

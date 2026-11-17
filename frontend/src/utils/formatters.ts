@@ -27,3 +27,17 @@ export function formatDateTime(dateInput: string | Date): string {
     hour12: true,
   });
 }
+
+/**
+ * Formats a date string (YYYY-MM-DD or ISO timestamp) into Addis Ababa date display.
+ */
+export function formatDate(dateInput: string | Date): string {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('en-US', {
+    timeZone: 'Africa/Addis_Ababa',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  });
+}

@@ -29,7 +29,18 @@ from backend.app.schemas.sale import (
     SaleListResponse,
 )
 from backend.app.schemas.product import ProductCreate, ProductResponse
-from backend.app.schemas.customer import CustomerCreate, CustomerResponse
+from backend.app.schemas.customer import (
+    CustomerCreate,
+    CustomerFinancialSummary,
+    CustomerListItem,
+    CustomerListResponse,
+    CustomerOutstandingItem,
+    CustomerOutstandingResponse,
+    CustomerResponse,
+    CustomerStatusUpdate,
+    CustomerUpdate,
+    DuplicateCheckResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -61,5 +72,13 @@ __all__ = [
     "ProductCreate",
     "ProductResponse",
     "CustomerCreate",
+    "CustomerUpdate",
+    "CustomerStatusUpdate",
     "CustomerResponse",
+    "CustomerListItem",
+    "CustomerListResponse",
+    "CustomerFinancialSummary",
+    "CustomerOutstandingItem",
+    "CustomerOutstandingResponse",
+    "DuplicateCheckResponse",
 ]

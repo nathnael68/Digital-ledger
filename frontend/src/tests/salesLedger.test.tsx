@@ -68,8 +68,8 @@ describe('SalesLedgerPage Component', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Digital Sales Ledger')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Search sale #, FS #/i)).toBeInTheDocument();
+    expect(screen.getByText(/Digital Sales Ledger/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Search by Sale #/i)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('DL-2026-0001')).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe('SalesLedgerPage Component', () => {
       expect(screen.getByText('DL-2026-0001')).toBeInTheDocument();
     });
 
-    const statusSelect = screen.getByDisplayValue('Status: All');
+    const statusSelect = screen.getByDisplayValue('Payment: All');
     fireEvent.change(statusSelect, { target: { value: 'partial' } });
 
     await waitFor(() => {

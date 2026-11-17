@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   ShoppingCart,
   Plus,
@@ -15,15 +15,18 @@ import {
   ArrowRight,
   RefreshCw,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { saleService } from '../services/saleService';
+import { customerService } from '../services/customerService';
 import { Customer, Product, SaleDetail, SaleItemInput } from '../types/sale';
 import { formatCurrency } from '../utils/formatters';
 import { StatusBadge } from '../components/StatusBadge';
 
 export const NewSalePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
 
   // Form State
@@ -39,9 +42,22 @@ export const NewSalePage: React.FC = () => {
   const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [newCustName, setNewCustName] = useState('');
+  const [newCustCompany, setNewCustCompany] = useState('');
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
+  const [newCustConfirmDup, setNewCustConfirmDup] = useState(false);
+  const [newCustDupWarning, setNewCustDupWarning] = useState<string | null>(null);
+  const [newCustDupMatches, setNewCustDupMatches] = useState<any[]>([]);
   const [custModalError, setCustModalError] = useState<string | null>(null);
+
+  // Check for preselected customer from navigation
+  useEffect(() => {
+    const pre = (location.state as any)?.preselectedCustomer;
+    if (pre) {
+      setSelectedCustomer(pre);
+      setIsWalkIn(false);
+    }
+  }, [location.state]);
 
   // Catalog Products State
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
@@ -183,21 +199,34 @@ export const NewSalePage: React.FC = () => {
       setCustModalError('Customer name is required');
       return;
     }
+    setCustModalError(null);
     try {
-      const newCust = await saleService.createCustomer({
+      const newCust = await customerService.createCustomer({
         name: newCustName.trim(),
+        company_name: newCustCompany.trim() || undefined,
         phone: newCustPhone.trim() || undefined,
         address: newCustAddress.trim() || undefined,
+        confirm_duplicate: newCustConfirmDup,
       });
-      setSelectedCustomer(newCust);
+      setSelectedCustomer(newCust as any);
       setIsWalkIn(false);
       setShowNewCustomerModal(false);
       setNewCustName('');
+      setNewCustCompany('');
       setNewCustPhone('');
       setNewCustAddress('');
+      setNewCustConfirmDup(false);
+      setNewCustDupWarning(null);
+      setNewCustDupMatches([]);
       setCustModalError(null);
     } catch (err: any) {
-      setCustModalError(err.message || 'Failed to create customer');
+      const detail = err?.response?.data?.detail;
+      if (err?.response?.status === 409 && Array.isArray(detail?.matches)) {
+        setNewCustDupMatches(detail.matches);
+        setNewCustDupWarning(detail.message || 'Possible duplicate customer detected.');
+      } else {
+        setCustModalError(typeof detail === 'string' ? detail : err.message || 'Failed to create customer');
+      }
     }
   };
 
@@ -561,8 +590,15 @@ export const NewSalePage: React.FC = () => {
                         }}
                         className="p-2 hover:bg-slate-100 cursor-pointer flex justify-between items-center"
                       >
-                        <span className="font-medium text-slate-800">{c.name}</span>
-                        <span className="text-[11px] text-slate-500">{c.phone || '-'}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-800">{c.name}</span>
+                          {c.company_name && (
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              {c.company_name}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] font-mono text-slate-500">{c.phone || '-'}</span>
                       </div>
                     ))}
                   </div>
@@ -572,7 +608,14 @@ export const NewSalePage: React.FC = () => {
                   <div className="p-3 rounded-lg bg-delgone-navy-50 border border-delgone-navy-200 text-xs flex justify-between items-center">
                     <div>
                       <p className="font-bold text-delgone-navy-900">{selectedCustomer.name}</p>
-                      <p className="text-[11px] text-delgone-navy-700">{selectedCustomer.phone || 'No phone'}</p>
+                      {selectedCustomer.company_name && (
+                        <p className="text-[11px] text-slate-600 font-medium">
+                          {selectedCustomer.company_name}
+                        </p>
+                      )}
+                      <p className="text-[11px] font-mono text-delgone-navy-700">
+                        {selectedCustomer.phone || 'No phone'}
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -961,7 +1004,10 @@ export const NewSalePage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base">New Customer Profile</h3>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">New Customer Profile</h3>
+                <p className="text-[11px] text-slate-500">Quick-create customer at counter</p>
+              </div>
               <button
                 onClick={() => setShowNewCustomerModal(false)}
                 className="text-slate-400 hover:text-slate-600 p-1"
@@ -974,16 +1020,60 @@ export const NewSalePage: React.FC = () => {
               <p className="text-xs text-rose-600 font-semibold">{custModalError}</p>
             )}
 
+            {/* Duplicate Warning in Counter Modal */}
+            {newCustDupWarning && (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-2">
+                <div className="flex items-start gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">{newCustDupWarning}</p>
+                    <p className="text-[11px] text-amber-800 mt-0.5">Existing matches:</p>
+                  </div>
+                </div>
+                <div className="bg-white/80 rounded p-2 border border-amber-200 text-[11px] font-mono space-y-1">
+                  {newCustDupMatches.map((m: any) => (
+                    <div key={m.id} className="flex justify-between">
+                      <span className="font-bold">{m.name}</span>
+                      <span className="text-slate-500">{m.company_name || 'Individual'}</span>
+                      <span className="text-slate-600">{m.phone || '-'}</span>
+                    </div>
+                  ))}
+                </div>
+                <label className="flex items-center gap-2 pt-1 cursor-pointer font-medium text-amber-950">
+                  <input
+                    type="checkbox"
+                    checked={newCustConfirmDup}
+                    onChange={(e) => setNewCustConfirmDup(e.target.checked)}
+                    className="rounded border-amber-400 text-delgone-navy-800"
+                  />
+                  <span>Confirm this is a distinct customer (not duplicate)</span>
+                </label>
+              </div>
+            )}
+
             <form onSubmit={handleCreateCustomer} className="space-y-3 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Customer / Business Name *
+                  Customer Name *
                 </label>
                 <input
                   type="text"
                   required
                   value={newCustName}
                   onChange={(e) => setNewCustName(e.target.value)}
+                  placeholder="e.g., Abebe Bekele"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-delgone-navy-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Company / Trade Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={newCustCompany}
+                  onChange={(e) => setNewCustCompany(e.target.value)}
                   placeholder="e.g., Lucy Printing Solutions"
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-delgone-navy-500"
                 />
@@ -997,7 +1087,7 @@ export const NewSalePage: React.FC = () => {
                   type="text"
                   value={newCustPhone}
                   onChange={(e) => setNewCustPhone(e.target.value)}
-                  placeholder="+251 91 123 4567"
+                  placeholder="e.g., 0911234567"
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-delgone-navy-500"
                 />
               </div>
@@ -1025,7 +1115,8 @@ export const NewSalePage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-delgone-navy-800 text-white font-semibold hover:bg-delgone-navy-900"
+                  disabled={newCustDupWarning !== null && !newCustConfirmDup}
+                  className="px-4 py-2 rounded-lg bg-delgone-navy-800 text-white font-semibold hover:bg-delgone-navy-900 disabled:opacity-50"
                 >
                   Save & Select
                 </button>

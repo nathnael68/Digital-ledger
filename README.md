@@ -198,17 +198,18 @@ The frontend will run at [http://localhost:5173](http://localhost:5173) and auto
 ## 4. Verification & Testing
 
 ### Backend Test Suite (Pytest)
-Run the automated pytest suite (tests authentication, rate limiting, permissions, model integrity, sales creation, validation, collision-safe numbering, payment installments, voiding, and real database dashboard calculations):
+Run the automated pytest suite (tests authentication, rate limiting, permissions, model integrity, sales creation, validation, collision-safe numbering, payment installments, voiding, real database dashboard calculations, customer duplicate detection, customer lifecycle, audit logs, outstanding receivables, aging brackets, and advanced ledger search/sort):
 ```bash
-# Run all 28 backend tests:
+# Run all 34 backend tests:
 pytest backend/tests -v
 ```
 
 ### Frontend Test Suite (Vitest)
-Verify frontend components, counter sales entry, sales ledger, detail view, authentication, and role-based navigation:
+Verify frontend components, customer directory, duplicate warning modals, customer statements, outstanding aging receivables, advanced sales ledger, counter sales entry, detail view, authentication, and role-based navigation:
 ```bash
 cd frontend
 npm test
+# (All 20 tests pass)
 ```
 
 ### Frontend Production Build & Typecheck
@@ -222,6 +223,10 @@ npm run build
 
 ## 5. Engineering Documentation Index
 
+- [Customer Management Specification](docs/CUSTOMER_MANAGEMENT.md) — Customer contact models, duplicate warning workflows, account lifecycle (active/inactive), and counter integration.
+- [Customer Financial Statements & History](docs/CUSTOMER_FINANCIAL_HISTORY.md) — Real-time ledger metrics, lifetime revenue, payment receipts, and voided sale reconciliation.
+- [Outstanding Balances & Aging Receivables](docs/OUTSTANDING_BALANCES.md) — Aging brackets (0–30, 31–60, 61–90, >90 days), Addis Ababa business calendar, and receivables API.
+- [Advanced Sales Ledger Specification](docs/ADVANCED_SALES_LEDGER.md) — Multi-identifier search, multi-field filters, column sorting, and URL search parameter synchronization.
 - [Sales Workflow Documentation](docs/SALES_WORKFLOW.md) — Counter sales procedures, catalog vs. manual item entry, FS number compliance, and review modals.
 - [Payment Logic & Precision](docs/PAYMENT_LOGIC.md) — Exact Decimal math, rounding, payment states (Paid, Partial, Credit, Voided), and concurrency locks.
 - [Sales Management REST API](docs/SALES_API.md) — Complete endpoint reference for sales, items, payments, ledger querying, products, and customers.

@@ -101,16 +101,17 @@ The transformation from Delgone's handwritten sales books to an enterprise-grade
 
 ---
 
-### Phase 4: Payment Management, Split Settlement & Credit Tracking
-- **Multi-Method Payment Engine:**
-  - Support for Cash, Bank Transfer (CBE, Awash, Dashen), Telebirr, and CBE Birr.
-  - Reference number capture (bank slip / transaction ID) with duplicate check.
-  - Split-payment modal (e.g. part cash, part bank transfer).
-- **Credit & Outstanding Balance Tracking:**
-  - Dynamic balance calculation per sale and aggregated per customer.
-  - Subsequent payment recording against existing sales.
-  - Automatic payment status progression (`pending` -> `partial` -> `paid` or `credit`).
-  - Customer credit statement view with payment history.
+### Phase 4: Customer Management and Advanced Sales Ledger (Completed)
+- [x] Complete customer management model and schema with company trade name, multiple contact numbers, email, address, and counter notes.
+- [x] Intelligent duplicate customer detection on matching phone, email, or name+company with explicit staff confirmation workflow (`confirm_duplicate: true`).
+- [x] Customer editing and account status lifecycle (`is_active: True/False`) with full audit trail diff logging. Inactive customers are protected and barred from new sales.
+- [x] Customer Directory (`/customers`) with backend pagination, multi-field search, status filtering, multi-column sorting, and real-time financial totals (purchases, paid, outstanding balance).
+- [x] Customer Profile & Statements (`/customers/:id`) with contact details, financial KPI cards (revenue, paid, balance due, open invoice counts), tabbed sales history, and payment voucher history.
+- [x] Full audit reconciliation: voided sales are clearly visible and badged in customer statements while strictly excluded from active balances and lifetime totals.
+- [x] Customer Outstanding Balances & Receivables (`/customers/outstanding`) with total receivables KPI and commercial aging breakdown (0–30, 31–60, 61–90, >90 days) calculated under the Addis Ababa timezone.
+- [x] Advanced Sales Ledger (`/sales`) with multi-identifier search (Sale #, FS # with leading zeros, customer name, company, phone, receipt #, product description), multi-field filter bar (payment status, payment method, transaction status 'active'/'voided', balance filter, date range), and URL parameter synchronization.
+- [x] Integration with counter sales (`/sales/new`): customer typeahead displays company name, filters inactive accounts, and supports counter quick-registration with duplicate warning.
+- [x] Comprehensive test suites: 34 backend Pytest tests and 20 frontend Vitest tests (54 total tests passing).
 
 ---
 

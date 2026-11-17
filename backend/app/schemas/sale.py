@@ -127,6 +127,8 @@ class SaleDetailResponse(BaseModel):
     fs_number: Optional[str] = None
     customer_id: Optional[uuid.UUID] = None
     customer_name: Optional[str] = None
+    customer_company_name: Optional[str] = None
+    customer_phone: Optional[str] = None
     sale_date: datetime
     subtotal: Decimal
     discount: Decimal
