@@ -7,12 +7,18 @@ from backend.app.core.config import settings
 from backend.app.core.security import (
     AUTH_COOKIE_NAME,
     create_access_token,
+    hash_password,
     login_rate_limiter,
     verify_password,
 )
 from backend.app.db.session import get_db
 from backend.app.models.user import User
-from backend.app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse
+from backend.app.schemas.auth import (
+    ChangePasswordRequest,
+    LoginRequest,
+    LoginResponse,
+    LogoutResponse,
+)
 from backend.app.schemas.user import UserResponse
 from backend.app.services.audit_service import log_audit
 
@@ -128,11 +134,13 @@ def logout(
     """
     Clears the authentication cookie and records a logout audit event.
     """
+    is_prod = settings.ENVIRONMENT == "production"
     response.delete_cookie(
         key=AUTH_COOKIE_NAME,
         path="/",
         httponly=True,
         samesite="lax",
+        secure=is_prod,
     )
 
     log_audit(
@@ -154,3 +162,41 @@ def get_me(current_user: User = Depends(get_current_user)) -> UserResponse:
     Returns the authenticated user's profile.
     """
     return UserResponse.model_validate(current_user)
+
+
+@router.post("/change-password")
+def change_my_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Allows any authenticated employee or administrator to securely change their own password.
+    Verifies the current password before applying the new bcrypt hash.
+    """
+    if not verify_password(password_data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The current password you entered is incorrect",
+        )
+
+    if password_data.current_password == password_data.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The new password must be different from your current password",
+        )
+
+    current_user.password_hash = hash_password(password_data.new_password)
+    current_user.password_changed_at = datetime.now(timezone.utc)
+
+    log_audit(
+        db=db,
+        action="PASSWORD_CHANGE",
+        entity_type="User",
+        entity_id=str(current_user.id),
+        user_id=current_user.id,
+        reason="Self-service password update",
+    )
+    db.commit()
+
+    return {"message": "Your password has been changed successfully"}

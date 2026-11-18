@@ -115,18 +115,21 @@ The transformation from Delgone's handwritten sales books to an enterprise-grade
 
 ---
 
-### Phase 5: Reporting, Analytics & Managerial Audit Trails
-- **Daily Register Closeout Report:**
-  - Shift summary: Total sales, cash collected, bank payments, credit extended.
-  - Reconciliation of physical paper receipt book serials against digital ledger.
-- **Periodic Business Intelligence:**
-  - Weekly and monthly revenue trends.
-  - Top-selling printing supplies and paper products.
-  - Outstanding debtors list with aging analysis.
-- **Void & Correction Workflows:**
-  - Void transaction modal with mandatory reason prompt.
-  - Admin approval requirement for voiding finalized sales.
-  - Reversal of balances and audit log recording.
+### Phase 5: Reports, Financial Analytics and Data Export (Completed)
+- [x] Centralized, audit-compliant financial service (`backend/app/services/report_service.py`) computing all reporting metrics from real database records without conflicting logic.
+- [x] Core financial definitions enforced: Sales Revenue calculated from valid sale creation dates, Collections calculated from actual payment receipt dates (subsequent payments belong to collection date, not sale date), Point-in-time Outstanding Receivables, and strict exclusion of voided sales from revenue.
+- [x] Timezone-aware date boundaries in `Africa/Addis_Ababa` (UTC+3) for Daily, Weekly (Monday–Sunday), Monthly, and validated Custom ranges.
+- [x] Executive Management Overview (`/api/reports/overview`) with 7 summary KPI cards, previous equivalent period comparison metrics and growth badges, daily revenue/collections trend table, and payment method distribution meters.
+- [x] Daily Sales Closeout Report (`/api/reports/daily`) with daily metrics, itemized valid sales register (Sale #, FS #, Receipt #, Time, Customer, Cashier, Grand Total, Paid, Balance Due, Status), and dedicated Voided Transactions Audit section with mandatory justification.
+- [x] Weekly, Monthly, and Custom Date-Range Reports (`/api/reports/weekly`, `/api/reports/monthly`, `/api/reports/custom-range`) with validation rejecting inverted date ranges.
+- [x] Cash vs Bank Collection Segregation: Cash Collections (`/api/reports/cash-collections`) and Bank/Mobile Collections (`/api/reports/bank-collections`) covering Bank Transfers, Telebirr, and CBE Birr with audited slip references.
+- [x] Credit Sales & Aging Report (`/api/reports/credit-sales`) tracking initial credit extended at checkout versus subsequent settlements and remaining uncollected balance.
+- [x] Employee Sales Activity & Accountability (`/api/reports/employees`) strictly distinguishing sales creation from subsequent payment collection recording.
+- [x] Customer Purchasing & Balance Aggregation (`/api/reports/customers`) with filtering for active debtors versus settled accounts.
+- [x] Excel Data Export (`openpyxl`) with explicit text cell formatting (`cell.number_format = "@"`, `cell.data_type = 's'`) strictly preserving leading zeros in FS numbers and receipt numbers (e.g. `000451`).
+- [x] PDF Document Export (`reportlab`) with Delgone corporate branding, two-pass dynamic page numbering ("Page X of Y"), and clean tabular layout.
+- [x] Interactive Frontend Reports Hub (`/reports` in React/TypeScript/Tailwind) featuring period switchers, sub-navigation tabs, itemized tables with links, and universal one-click Excel & PDF export buttons.
+- [x] Comprehensive automated test coverage: 41 backend Pytest tests (including 7 report tests) and 26 frontend Vitest tests (including 6 report tests) — 67 total tests passing 100%.
 
 ---
 

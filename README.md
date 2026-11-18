@@ -198,18 +198,18 @@ The frontend will run at [http://localhost:5173](http://localhost:5173) and auto
 ## 4. Verification & Testing
 
 ### Backend Test Suite (Pytest)
-Run the automated pytest suite (tests authentication, rate limiting, permissions, model integrity, sales creation, validation, collision-safe numbering, payment installments, voiding, real database dashboard calculations, customer duplicate detection, customer lifecycle, audit logs, outstanding receivables, aging brackets, and advanced ledger search/sort):
+Run the automated pytest suite (tests authentication, rate limiting, permissions, model integrity, sales creation, validation, collision-safe numbering, payment installments, voiding, real database dashboard calculations, customer duplicate detection, customer lifecycle, audit logs, outstanding receivables, aging brackets, advanced ledger search/sort, daily sales reports, cash/bank segregation, credit sales, employee activity, custom range validation, openpyxl text formatting preserving leading zeros, and reportlab PDF generation):
 ```bash
-# Run all 34 backend tests:
+# Run all 41 backend tests:
 pytest backend/tests -v
 ```
 
 ### Frontend Test Suite (Vitest)
-Verify frontend components, customer directory, duplicate warning modals, customer statements, outstanding aging receivables, advanced sales ledger, counter sales entry, detail view, authentication, and role-based navigation:
+Verify frontend components, customer directory, duplicate warning modals, customer statements, outstanding aging receivables, advanced sales ledger, counter sales entry, detail view, authentication, role-based navigation, reports executive overview, daily register closeout, cash collections, bank collections, employee activity, and Excel/PDF export triggers:
 ```bash
 cd frontend
 npm test
-# (All 20 tests pass)
+# (All 26 tests pass)
 ```
 
 ### Frontend Production Build & Typecheck
@@ -223,6 +223,12 @@ npm run build
 
 ## 5. Engineering Documentation Index
 
+- [Financial Reporting Definitions](docs/REPORTING_DEFINITIONS.md) — Exact mathematical formulas, sales revenue vs cash/bank collections, point-in-time outstanding balances, void exclusion, and Addis Ababa timezone boundaries.
+- [Daily, Weekly & Monthly Reports](docs/DAILY_WEEKLY_MONTHLY_REPORTS.md) — Daily register closeouts, itemized sales register, voided transaction audit section, trend breakdowns, and comparison metrics.
+- [Payment Collection Reports](docs/PAYMENT_COLLECTION_REPORTS.md) — Segregation of physical cash vs electronic funds (Telebirr, CBE Birr, Bank Transfers) and subsequent debt settlement timing principles.
+- [Credit & Outstanding Receivables Reports](docs/CREDIT_AND_OUTSTANDING_REPORTS.md) — Credit sales vs company receivables, initial credit vs current balance, and Addis Ababa commercial aging brackets (0–30, 31–60, 61–90, >90 days).
+- [Employee Activity & Accountability](docs/EMPLOYEE_REPORTS.md) — Performance metrics strictly distinguishing sales creator from subsequent payment collection recorder, and cash drawer reconciliation protocols.
+- [PDF & Excel Data Exports](docs/PDF_AND_EXCEL_EXPORTS.md) — Openpyxl text cell formatting strictly preserving leading zeros in FS numbers (e.g. `000451`), ReportLab branded PDF generation, and two-pass page numbering.
 - [Customer Management Specification](docs/CUSTOMER_MANAGEMENT.md) — Customer contact models, duplicate warning workflows, account lifecycle (active/inactive), and counter integration.
 - [Customer Financial Statements & History](docs/CUSTOMER_FINANCIAL_HISTORY.md) — Real-time ledger metrics, lifetime revenue, payment receipts, and voided sale reconciliation.
 - [Outstanding Balances & Aging Receivables](docs/OUTSTANDING_BALANCES.md) — Aging brackets (0–30, 31–60, 61–90, >90 days), Addis Ababa business calendar, and receivables API.

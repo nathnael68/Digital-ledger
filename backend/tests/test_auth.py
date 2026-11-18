@@ -129,3 +129,53 @@ def test_logout(client: TestClient, db_session: Session):
     logout_resp = client.post("/api/auth/logout")
     assert logout_resp.status_code == 200
     assert logout_resp.json()["message"] == "Logged out successfully"
+
+
+def test_change_password(client: TestClient, db_session: Session):
+    user = User(
+        username="change_pw_user",
+        full_name="Password Changer",
+        password_hash=hash_password("OldPassword123!"),
+        role="sales_employee",
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    # Login
+    client.post(
+        "/api/auth/login",
+        json={"username": "change_pw_user", "password": "OldPassword123!"},
+    )
+
+    # 1. Invalid current password
+    bad_resp = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "WrongPassword123!", "new_password": "NewValidPassword2026!"},
+    )
+    assert bad_resp.status_code == 400
+    assert "current password you entered is incorrect" in bad_resp.json()["detail"]
+
+    # 2. Same password rejected
+    same_resp = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "OldPassword123!", "new_password": "OldPassword123!"},
+    )
+    assert same_resp.status_code == 400
+    assert "must be different" in same_resp.json()["detail"]
+
+    # 3. Successful change
+    good_resp = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "OldPassword123!", "new_password": "NewValidPassword2026!"},
+    )
+    assert good_resp.status_code == 200
+    assert "changed successfully" in good_resp.json()["message"]
+
+    # 4. Verify login with new password works
+    client.cookies.clear()
+    login_new = client.post(
+        "/api/auth/login",
+        json={"username": "change_pw_user", "password": "NewValidPassword2026!"},
+    )
+    assert login_new.status_code == 200

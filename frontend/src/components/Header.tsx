@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Clock, UserCheck, LogOut, Shield, ChevronDown } from 'lucide-react';
+import { Menu, Clock, UserCheck, LogOut, Shield, ChevronDown, Download, WifiOff } from 'lucide-react';
 import { useApiHealth } from '../hooks/useApiHealth';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from './StatusBadge';
 import { formatDateTime } from '../utils/formatters';
+import { onInstallAvailabilityChange, promptPWAInstall } from '../utils/pwa';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -11,10 +13,19 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { data, loading, error } = useApiHealth();
+  const isOnline = useNetworkStatus();
   const { user, logout } = useAuth();
   const [addisTime, setAddisTime] = useState<string>('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // PWA install availability listener
+  useEffect(() => {
+    return onInstallAvailabilityChange((available) => {
+      setCanInstall(available);
+    });
+  }, []);
 
   // Addis Ababa live clock
   useEffect(() => {
@@ -87,7 +98,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
         {/* Live Backend Connection Indicator */}
         <div className="flex items-center gap-1.5">
-          {loading ? (
+          {!isOnline ? (
+            <StatusBadge status="error" label="Device Offline" />
+          ) : loading ? (
             <StatusBadge status="pending" label="Checking API..." />
           ) : error ? (
             <StatusBadge status="error" label="API Offline" />
@@ -97,6 +110,19 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             <StatusBadge status="degraded" label="API Online • DB Pending" />
           )}
         </div>
+
+        {/* PWA Install Button (if browser prompt available) */}
+        {canInstall && (
+          <button
+            type="button"
+            onClick={() => promptPWAInstall()}
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-900 bg-amber-300 hover:bg-amber-400 border border-amber-400 rounded-lg shadow-sm transition-colors"
+            title="Install Delgone Ledger application to home screen or desktop"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Install App</span>
+          </button>
+        )}
 
         {/* User Account Dropdown */}
         <div className="relative pl-2 border-l border-slate-200" ref={dropdownRef}>
@@ -168,6 +194,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           )}
         </div>
       </div>
+
+      {/* Offline Alert Strip */}
+      {!isOnline && (
+        <div className="absolute top-16 left-0 right-0 bg-amber-600 text-white text-xs font-medium py-1.5 px-4 flex items-center justify-center gap-2 shadow-sm z-40">
+          <WifiOff className="w-3.5 h-3.5 shrink-0" />
+          <span>Device is currently offline. An active connection to the store server is required to record sales and payments.</span>
+        </div>
+      )}
     </header>
   );
 };
