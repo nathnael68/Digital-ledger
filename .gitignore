@@ -1,8 +1,16 @@
 # Environments & secrets
 .env
+.env.production
 *.env.local
 *.env.*.local
 !.env.example
+!.env.production.example
+
+# Backups & dumps
+backups/
+*.sql
+*.sql.gz
+*.sha256
 
 # Python
 __pycache__/

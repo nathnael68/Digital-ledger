@@ -133,15 +133,22 @@ The transformation from Delgone's handwritten sales books to an enterprise-grade
 
 ---
 
-### Phase 6: PWA Optimization, Offline Drafts & Production Deployment
-- **Progressive Web App (PWA):**
-  - Complete service worker implementation for offline UI asset loading.
-  - "Add to Home Screen" installation on Android and iOS devices.
-- **Offline Sales Drafts (Safe Counter Mode):**
-  - Local draft saving when internet connectivity is interrupted.
-  - Clear "Draft — Not Confirmed" visual watermarking to prevent duplicate receipts.
-  - Manual synchronization workflow upon reconnecting.
-- **Production Hardening:**
-  - Automated PostgreSQL backup schedule (pg_dump cron).
-  - SSL/TLS certificate setup with Nginx reverse proxy.
-  - Rate limiting and production logging.
+### Phase 6: Production Readiness, PWA, Deployment & Security (Completed)
+- [x] Initial full-stack application audit documented in `docs/PHASE_AUDIT_REPORT.md`.
+- [x] Progressive Web App (PWA) with valid `manifest.webmanifest`, standalone display mode, `#0F172A` theme color, and high-resolution icons (192px, 512px, SVG, and iOS `apple-touch-icon`).
+- [x] Service worker (`sw.js`) caching core app shell and providing clean HTTP 503 offline diagnostics for API attempts.
+- [x] Offline awareness banner in `Header.tsx` via `useNetworkStatus` hook with explicit messaging that financial transactions require an active connection.
+- [x] One-click "Install App" prompt in header with native `beforeinstallprompt` handling and diagnostics modal.
+- [x] Complete employee mobile and desktop installation guide in `docs/PWA_INSTALLATION_GUIDE.md`.
+- [x] Full System Settings & Profile Hub (`/settings`) with company profile, password change workflow (`POST /api/auth/change-password`), fiscal receipt rules, PWA diagnostics, and admin quick links.
+- [x] Automated database backup script (`scripts/backup_db.sh` and `scripts/backup_db.ps1`) with daily, weekly, and monthly retention tiers, gzip compression, and SHA-256 integrity verification.
+- [x] Automated database restoration script (`scripts/restore_db.sh` and `scripts/restore_db.ps1`) with connection termination, integrity verification, and table count validation.
+- [x] Automated backup and restore test suite (`backend/tests/test_backup_restore.py`) verifying schema, transactions, financial fields, and tampered checksum detection.
+- [x] Production Docker Compose stack (`docker-compose.prod.yml`) with isolated database (no exposed public ports), production multi-worker Gunicorn backend (`backend/Dockerfile.prod`), static Nginx frontend (`frontend/Dockerfile.prod`), and automated Certbot SSL renewer.
+- [x] Production Nginx reverse proxy configuration (`nginx/nginx.conf`, `nginx/conf.d/delgone.conf`) with HTTP->HTTPS redirection, Let's Encrypt ACME challenges, modern TLS ciphers, HSTS, security headers, and brute-force rate limiting.
+- [x] Production environment template (`.env.production.example`) with secure password generation instructions.
+- [x] Comprehensive 13-step Ubuntu VPS deployment guide in `docs/DEPLOYMENT_GUIDE.md`.
+- [x] Comprehensive database reliability and disaster recovery documentation in `docs/BACKUP_AND_RESTORATION.md`.
+- [x] Complete security audit and hardening report in `docs/SECURITY_AUDIT_AND_HARDENING.md`.
+- [x] Version control: Published to GitHub under `https://github.com/nathnael68/Digital-ledger`.
+- [x] Test coverage: 43 backend Pytest tests (including backup/restore test) and 28 frontend Vitest tests (including settings tests) — 71 total automated tests passing 100%.
