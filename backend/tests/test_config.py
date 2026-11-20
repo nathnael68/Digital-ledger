@@ -20,3 +20,11 @@ def test_default_settings():
     assert settings.APP_TIMEZONE == "Africa/Addis_Ababa"
     assert settings.APP_CURRENCY == "ETB"
     assert settings.API_V1_STR == "/api"
+
+
+def test_database_url_normalization():
+    s1 = Settings(DATABASE_URL="postgres://user:pass@host:5432/db")
+    assert s1.DATABASE_URL == "postgresql+psycopg://user:pass@host:5432/db"
+
+    s2 = Settings(DATABASE_URL="postgresql://user:pass@host:5432/db")
+    assert s2.DATABASE_URL == "postgresql+psycopg://user:pass@host:5432/db"

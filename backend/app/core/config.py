@@ -40,14 +40,20 @@ class Settings(BaseSettings):
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def resolve_sqlite_url(cls, v: Union[str, Any]) -> str:
-        if isinstance(v, str) and v.startswith("sqlite:///") and not v.startswith("sqlite:///:memory:"):
-            path_part = v.replace("sqlite:///", "")
-            if path_part.startswith("./"):
-                path_part = path_part[2:]
-            if not os.path.isabs(path_part):
-                abs_db = os.path.normpath(os.path.join(BACKEND_DIR, path_part))
-                return f"sqlite:///{abs_db.replace(os.sep, '/')}"
+    def resolve_database_url(cls, v: Union[str, Any]) -> str:
+        if isinstance(v, str):
+            # Render and Heroku inject postgres:// which is incompatible with SQLAlchemy 2.0 (requires postgresql+psycopg://)
+            if v.startswith("postgres://"):
+                v = v.replace("postgres://", "postgresql+psycopg://", 1)
+            elif v.startswith("postgresql://") and not v.startswith("postgresql+"):
+                v = v.replace("postgresql://", "postgresql+psycopg://", 1)
+            elif v.startswith("sqlite:///") and not v.startswith("sqlite:///:memory:"):
+                path_part = v.replace("sqlite:///", "")
+                if path_part.startswith("./"):
+                    path_part = path_part[2:]
+                if not os.path.isabs(path_part):
+                    abs_db = os.path.normpath(os.path.join(BACKEND_DIR, path_part))
+                    return f"sqlite:///{abs_db.replace(os.sep, '/')}"
         return str(v)
 
     @field_validator("CORS_ORIGINS", mode="before")
