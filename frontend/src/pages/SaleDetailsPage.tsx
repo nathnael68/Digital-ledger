@@ -417,10 +417,18 @@ export const SaleDetailsPage: React.FC = () => {
               <span>Subtotal:</span>
               <span className="font-mono font-semibold">{formatCurrency(sale.subtotal)}</span>
             </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Discount:</span>
-              <span className="font-mono font-semibold text-rose-600">
-                - {formatCurrency(sale.discount)}
+            {parseFloat(String(sale.discount || 0)) > 0 && (
+              <div className="flex justify-between text-slate-600">
+                <span>Discount:</span>
+                <span className="font-mono font-semibold text-rose-600">
+                  - {formatCurrency(sale.discount)}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between text-delgone-navy-900">
+              <span className="font-medium">15% VAT:</span>
+              <span className="font-mono font-bold text-delgone-navy-800">
+                + {formatCurrency(sale.vat_amount || 0)}
               </span>
             </div>
             <div className="flex justify-between text-slate-900 font-bold border-t border-slate-200 pt-2 text-sm">

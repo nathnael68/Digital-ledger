@@ -39,6 +39,7 @@ export interface SaleCreatePayload {
   paper_receipt_number?: string;
   buyer_tin?: string;
   discount?: number | string;
+  vat_rate?: number | string;
   notes?: string;
   items: {
     product_id?: string | null;
@@ -87,6 +88,8 @@ export interface SaleDetail {
   sale_date: string;
   subtotal: number | string;
   discount: number | string;
+  vat_rate?: number | string;
+  vat_amount?: number | string;
   grand_total: number | string;
   total_paid: number | string;
   outstanding_balance: number | string;

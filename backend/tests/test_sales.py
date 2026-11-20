@@ -119,6 +119,48 @@ def test_create_sale_catalog_and_manual_items(client: TestClient, db_session: Se
     assert sale["created_by_name"] == cashier.full_name
 
 
+def test_create_sale_with_15_percent_vat(client: TestClient, db_session: Session):
+    """Verify that when 15% VAT is applied, the financial summary calculations are exact."""
+    cashier = setup_authenticated_cashier(client, db_session)
+
+    # Subtotal: 10 * 100 = 1000.00
+    # Discount: 100.00
+    # Taxable: 900.00
+    # 15% VAT: 135.00
+    # Grand Total: 1035.00
+    payload = {
+        "fs_number": "FS-VAT-001",
+        "buyer_tin": "0012345678",
+        "items": [
+            {
+                "product_name": "Premium Banner Fabric",
+                "unit": "roll",
+                "quantity": 10,
+                "unit_price": 100,
+            }
+        ],
+        "discount": 100,
+        "vat_rate": 0.15,
+        "initial_payment": {
+            "payment_method": "cash",
+            "amount": "1035.00",
+        },
+    }
+
+    resp = client.post("/api/sales", json=payload)
+    assert resp.status_code == 201
+    sale = resp.json()
+
+    assert Decimal(sale["subtotal"]) == Decimal("1000.00")
+    assert Decimal(sale["discount"]) == Decimal("100.00")
+    assert Decimal(sale["vat_rate"]) == Decimal("0.1500")
+    assert Decimal(sale["vat_amount"]) == Decimal("135.00")
+    assert Decimal(sale["grand_total"]) == Decimal("1035.00")
+    assert Decimal(sale["amount_paid"]) == Decimal("1035.00")
+    assert Decimal(sale["balance_due"]) == Decimal("0.00")
+    assert sale["payment_status"] == "paid"
+
+
 def test_sale_validation_errors(client: TestClient, db_session: Session):
     setup_authenticated_cashier(client, db_session)
 

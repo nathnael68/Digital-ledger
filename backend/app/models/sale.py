@@ -40,6 +40,12 @@ class Sale(Base):
     discount: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), default=Decimal("0.00"), nullable=False
     )
+    vat_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), default=Decimal("0.0000"), server_default="0.0000", nullable=False
+    )
+    vat_amount: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=Decimal("0.00"), server_default="0.00", nullable=False
+    )
     grand_total: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), default=Decimal("0.00"), nullable=False
     )

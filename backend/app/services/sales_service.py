@@ -83,10 +83,12 @@ def generate_next_sale_number(db: Session) -> str:
 
 
 def calculate_totals(
-    items_in: List[SaleItemCreate], discount: Decimal
-) -> Tuple[Decimal, Decimal, List[Dict[str, Any]]]:
+    items_in: List[SaleItemCreate],
+    discount: Decimal,
+    vat_rate: Optional[Decimal] = None,
+) -> Tuple[Decimal, Decimal, Decimal, Decimal, List[Dict[str, Any]]]:
     """
-    Validates items and computes line subtotals, overall subtotal, and grand total.
+    Validates items and computes line subtotals, overall subtotal, 15% VAT, and grand total.
     """
     if not items_in:
         raise HTTPException(
@@ -140,8 +142,11 @@ def calculate_totals(
             detail=f"Discount ({discount} ETB) cannot exceed the sale subtotal ({subtotal} ETB)",
         )
 
-    grand_total = round_currency(subtotal - discount)
-    return subtotal, grand_total, processed_lines
+    rate = vat_rate if vat_rate is not None else Decimal("0.00")
+    taxable = round_currency(subtotal - discount)
+    vat_amount = round_currency(taxable * rate)
+    grand_total = round_currency(taxable + vat_amount)
+    return subtotal, rate, vat_amount, grand_total, processed_lines
 
 
 def build_sale_detail_response(sale: Sale) -> SaleDetailResponse:
@@ -192,6 +197,8 @@ def build_sale_detail_response(sale: Sale) -> SaleDetailResponse:
         sale_date=sale.sale_date,
         subtotal=sale.subtotal,
         discount=sale.discount,
+        vat_rate=getattr(sale, "vat_rate", Decimal("0.00")),
+        vat_amount=getattr(sale, "vat_amount", Decimal("0.00")),
         grand_total=sale.grand_total,
         total_paid=total_paid,
         outstanding_balance=outstanding,
@@ -247,7 +254,9 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> SaleDet
             )
 
     # 3. Financial calculations
-    subtotal, grand_total, line_data = calculate_totals(sale_in.items, sale_in.discount)
+    subtotal, applied_vat_rate, vat_amount, grand_total, line_data = calculate_totals(
+        sale_in.items, sale_in.discount, sale_in.vat_rate
+    )
 
     # 4. Sequential collision-safe sale number
     sale_number = generate_next_sale_number(db)
@@ -284,6 +293,8 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> SaleDet
         sale_date=now_tz,
         subtotal=subtotal,
         discount=round_currency(sale_in.discount),
+        vat_rate=applied_vat_rate,
+        vat_amount=vat_amount,
         grand_total=grand_total,
         payment_status=payment_status,
         notes=sale_in.notes.strip() if sale_in.notes else None,

@@ -52,6 +52,7 @@ class SaleCreate(BaseModel):
     paper_receipt_number: Optional[str] = Field(None, max_length=100)
     buyer_tin: Optional[str] = Field(None, max_length=50, description="Buyer Taxpayer Identification Number")
     discount: Decimal = Field(Decimal("0.00"), ge=0)
+    vat_rate: Optional[Decimal] = Field(None, ge=0, le=1, description="VAT rate applied, e.g. 0.15 for 15% Ethiopian VAT")
     notes: Optional[str] = None
     items: List[SaleItemCreate] = Field(..., min_length=1)
     payment: Optional[SalePaymentInput] = None
@@ -137,6 +138,8 @@ class SaleDetailResponse(BaseModel):
     sale_date: datetime
     subtotal: Decimal
     discount: Decimal
+    vat_rate: Decimal = Decimal("0.00")
+    vat_amount: Decimal = Decimal("0.00")
     grand_total: Decimal
     total_paid: Decimal
     outstanding_balance: Decimal
