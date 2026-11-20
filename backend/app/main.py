@@ -35,13 +35,25 @@ app = FastAPI(
 )
 
 # CORS Middleware Configuration
-if settings.CORS_ORIGINS:
+cors_kwargs = {
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+}
+
+if settings.ENVIRONMENT == "production":
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[str(origin) for origin in settings.CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        **cors_kwargs,
+    )
+else:
+    # In development / preview tunnels: support localhost, LAN IPs, and trycloudflare.com
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin) for origin in settings.CORS_ORIGINS],
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|172\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|.*\.trycloudflare\.com)(:\d+)?$",
+        **cors_kwargs,
     )
 
 
