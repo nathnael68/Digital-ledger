@@ -119,31 +119,36 @@ def test_create_sale_catalog_and_manual_items(client: TestClient, db_session: Se
     assert sale["created_by_name"] == cashier.full_name
 
 
-def test_create_sale_with_15_percent_vat(client: TestClient, db_session: Session):
-    """Verify that when 15% VAT is applied, the financial summary calculations are exact."""
+def test_create_sale_with_15_percent_vat_extracted(client: TestClient, db_session: Session):
+    """
+    Verify that entered unit prices are treated as VAT-inclusive,
+    and 15% VAT is extracted rather than added on top:
+        Subtotal (excl. VAT) = Grand Total / 1.15
+        VAT = Grand Total - Subtotal
+    Example from Delgone invoice:
+        Entered VAT-inclusive price: 1,800.90 ETB
+        Subtotal (excl. VAT): 1,566.00 ETB
+        VAT (15%): 234.90 ETB
+        Grand Total: 1,800.90 ETB
+    """
     cashier = setup_authenticated_cashier(client, db_session)
 
-    # Subtotal: 10 * 100 = 1000.00
-    # Discount: 100.00
-    # Taxable: 900.00
-    # 15% VAT: 135.00
-    # Grand Total: 1035.00
     payload = {
         "fs_number": "FS-VAT-001",
         "buyer_tin": "0012345678",
         "items": [
             {
-                "product_name": "Premium Banner Fabric",
-                "unit": "roll",
-                "quantity": 10,
-                "unit_price": 100,
+                "product_name": "Ring 10mm & 8mm Set",
+                "unit": "set",
+                "quantity": 1,
+                "unit_price": "1800.90",
             }
         ],
-        "discount": 100,
+        "discount": 0,
         "vat_rate": 0.15,
         "initial_payment": {
             "payment_method": "cash",
-            "amount": "1035.00",
+            "amount": "1800.90",
         },
     }
 
@@ -151,12 +156,54 @@ def test_create_sale_with_15_percent_vat(client: TestClient, db_session: Session
     assert resp.status_code == 201
     sale = resp.json()
 
-    assert Decimal(sale["subtotal"]) == Decimal("1000.00")
-    assert Decimal(sale["discount"]) == Decimal("100.00")
+    assert Decimal(sale["grand_total"]) == Decimal("1800.90")
+    assert Decimal(sale["subtotal"]) == Decimal("1566.00")
     assert Decimal(sale["vat_rate"]) == Decimal("0.1500")
-    assert Decimal(sale["vat_amount"]) == Decimal("135.00")
-    assert Decimal(sale["grand_total"]) == Decimal("1035.00")
-    assert Decimal(sale["amount_paid"]) == Decimal("1035.00")
+    assert Decimal(sale["vat_amount"]) == Decimal("234.90")
+    assert Decimal(sale["amount_paid"]) == Decimal("1800.90")
+    assert Decimal(sale["balance_due"]) == Decimal("0.00")
+    assert sale["payment_status"] == "paid"
+
+
+def test_create_sale_with_vat_and_discount(client: TestClient, db_session: Session):
+    """
+    Ensure discounts reduce the VAT-inclusive selling amount before VAT extraction.
+    Gross: 2,000.00 ETB
+    Discount: 199.10 ETB
+    Grand Total: 1,800.90 ETB
+    Subtotal (excl. VAT): 1,566.00 ETB
+    VAT (15%): 234.90 ETB
+    """
+    cashier = setup_authenticated_cashier(client, db_session)
+
+    payload = {
+        "fs_number": "FS-VAT-002",
+        "buyer_tin": "0012345678",
+        "items": [
+            {
+                "product_name": "Display Stand",
+                "unit": "pcs",
+                "quantity": 2,
+                "unit_price": "1000.00",
+            }
+        ],
+        "discount": "199.10",
+        "vat_rate": 0.15,
+        "initial_payment": {
+            "payment_method": "cash",
+            "amount": "1800.90",
+        },
+    }
+
+    resp = client.post("/api/sales", json=payload)
+    assert resp.status_code == 201
+    sale = resp.json()
+
+    assert Decimal(sale["discount"]) == Decimal("199.10")
+    assert Decimal(sale["grand_total"]) == Decimal("1800.90")
+    assert Decimal(sale["subtotal"]) == Decimal("1566.00")
+    assert Decimal(sale["vat_amount"]) == Decimal("234.90")
+    assert Decimal(sale["amount_paid"]) == Decimal("1800.90")
     assert Decimal(sale["balance_due"]) == Decimal("0.00")
     assert sale["payment_status"] == "paid"
 

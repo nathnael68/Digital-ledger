@@ -22,7 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { saleService } from '../services/saleService';
 import { customerService } from '../services/customerService';
 import { Customer, Product, SaleDetail, SaleItemInput } from '../types/sale';
-import { formatCurrency, numberToWords } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
 import { StatusBadge } from '../components/StatusBadge';
 import { CashSalesAttachment } from '../components/CashSalesAttachment';
 
@@ -112,8 +112,8 @@ export const NewSalePage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [customerSearch, isWalkIn]);
 
-  // Calculations
-  const subtotal = useMemo(() => {
+  // Calculations: Entered unit prices are treated as VAT-inclusive selling prices.
+  const grossInclusive = useMemo(() => {
     return items.reduce((acc, item) => {
       const q = parseFloat(String(item.quantity)) || 0;
       const p = parseFloat(String(item.unit_price)) || 0;
@@ -122,10 +122,12 @@ export const NewSalePage: React.FC = () => {
   }, [items]);
 
   const numDiscount = parseFloat(String(discount)) || 0;
-  const taxableAmount = Math.max(0, subtotal - numDiscount);
+  // Grand total is the VAT-inclusive amount after applicable discounts
+  const grandTotal = Math.max(0, Math.round((grossInclusive - numDiscount) * 100) / 100);
   const vatRate = 0.15;
-  const vatAmount = Math.round(taxableAmount * vatRate * 100) / 100;
-  const grandTotal = Math.round((taxableAmount + vatAmount) * 100) / 100;
+  // VAT extraction formula: Subtotal = VAT-inclusive / 1.15, VAT = VAT-inclusive - Subtotal
+  const subtotalExclVat = Math.round((grandTotal / (1 + vatRate)) * 100) / 100;
+  const vatAmount = Math.round((grandTotal - subtotalExclVat) * 100) / 100;
 
   // Keep amount paid in sync when payment method or grand total changes
   useEffect(() => {
@@ -301,8 +303,8 @@ export const NewSalePage: React.FC = () => {
       }
     }
 
-    if (numDiscount > subtotal) {
-      setError(`Discount (${formatCurrency(numDiscount)}) cannot exceed the subtotal (${formatCurrency(subtotal)}).`);
+    if (numDiscount > grossInclusive) {
+      setError(`Discount (${formatCurrency(numDiscount)}) cannot exceed the total items amount (${formatCurrency(grossInclusive)}).`);
       return;
     }
 
@@ -431,13 +433,13 @@ export const NewSalePage: React.FC = () => {
               </span>
             </div>
             <div className="flex justify-between items-center py-2 text-xs">
-              <span className="text-slate-500">Subtotal:</span>
-              <span className="font-mono text-slate-700">{formatCurrency(completedSale.subtotal)}</span>
+              <span className="text-slate-600 font-medium">Subtotal (excluding VAT):</span>
+              <span className="font-mono text-slate-800 font-bold">{formatCurrency(completedSale.subtotal)}</span>
             </div>
             {parseFloat(String(completedSale.discount || 0)) > 0 && (
               <div className="flex justify-between items-center py-2 text-xs text-rose-600">
                 <span>Discount:</span>
-                <span className="font-mono">- {formatCurrency(completedSale.discount)}</span>
+                <span className="font-mono font-bold">- {formatCurrency(completedSale.discount)}</span>
               </div>
             )}
             <div className="flex justify-between items-center py-2 text-xs text-delgone-navy-800">
@@ -445,8 +447,8 @@ export const NewSalePage: React.FC = () => {
               <span className="font-mono font-bold">+ {formatCurrency(completedSale.vat_amount || 0)}</span>
             </div>
             <div className="flex justify-between items-center py-3 border-t border-slate-200">
-              <span className="text-sm font-bold text-slate-900">Grand Total:</span>
-              <span className="text-base font-bold text-emerald-700 font-mono">
+              <span className="text-sm font-bold text-slate-900">Grand Total (VAT inclusive):</span>
+              <span className="text-base font-black text-delgone-navy-900 font-mono">
                 {formatCurrency(completedSale.grand_total)}
               </span>
             </div>
@@ -493,7 +495,7 @@ export const NewSalePage: React.FC = () => {
             </button>
           </div>
 
-          {/* Printable Sales Attachment Modal */}
+          {/* Printable Cash Sales Attachment Modal */}
           {showAttachmentModal && completedSale && (
             <CashSalesAttachment
               sale={completedSale}
@@ -989,8 +991,8 @@ export const NewSalePage: React.FC = () => {
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center text-slate-600">
-                <span>Items Subtotal:</span>
-                <span className="font-mono font-semibold">{formatCurrency(subtotal)}</span>
+                <span>Items Total (Entered):</span>
+                <span className="font-mono font-semibold">{formatCurrency(grossInclusive)}</span>
               </div>
 
               <div className="flex justify-between items-center text-slate-600">
@@ -1007,44 +1009,39 @@ export const NewSalePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Financial Totals Box matching Cash Sales Attachment */}
-              <div className="border border-slate-300 rounded-lg overflow-hidden divide-y divide-slate-200 text-xs font-sans">
+              {/* Financial Summary Display per VAT Specification */}
+              <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-200 text-xs font-sans mt-2">
                 <div className="flex justify-between items-center px-3 py-2 bg-slate-50">
-                  <span className="font-semibold text-slate-700">Subtotal:</span>
-                  <span className="font-mono font-bold text-slate-900">{formatCurrency(subtotal)}</span>
+                  <span className="font-semibold text-slate-700">1. Subtotal (excluding VAT):</span>
+                  <span className="font-mono font-bold text-slate-900">{formatCurrency(subtotalExclVat)}</span>
                 </div>
-                {numDiscount > 0 && (
-                  <div className="flex justify-between items-center px-3 py-1.5 bg-white text-rose-600">
-                    <span>Discount:</span>
-                    <span className="font-mono font-bold">- {formatCurrency(numDiscount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center px-3 py-2 bg-slate-50">
-                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                    VAT
-                    <span className="text-[10px] bg-delgone-navy-50 text-delgone-navy-800 px-1.5 py-0.5 rounded border border-delgone-navy-200 font-mono font-bold">
+                <div className="flex justify-between items-center px-3 py-2 bg-white text-delgone-navy-900">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    2. VAT (15%):
+                    <span className="text-[10px] font-bold bg-delgone-navy-50 text-delgone-navy-800 px-1.5 py-0.5 rounded border border-delgone-navy-200">
                       15%
                     </span>
                   </span>
-                  <span className="font-mono font-bold text-slate-900">+ {formatCurrency(vatAmount)}</span>
+                  <span className="font-mono font-bold text-delgone-navy-800">
+                    + {formatCurrency(vatAmount)}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center px-3 py-2 bg-slate-200 text-slate-900 font-bold border-t border-slate-300">
-                  <span className="text-xs uppercase tracking-wide">Grand Total:</span>
-                  <span className="text-sm font-black font-mono">{formatCurrency(grandTotal)}</span>
+                <div className="flex justify-between items-center px-3 py-2.5 bg-slate-100 text-slate-900 font-bold">
+                  <span className="text-xs uppercase tracking-wide">3. Grand Total (VAT inclusive):</span>
+                  <span className="text-sm font-black font-mono text-delgone-navy-900">
+                    {formatCurrency(grandTotal)}
+                  </span>
                 </div>
               </div>
 
-              {/* Amount In Words */}
-              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-[11px] space-y-0.5">
-                <span className="font-bold text-slate-500 uppercase tracking-wider block text-[10px]">
-                  Amount In Words:
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                <span className="text-base font-bold text-slate-900">Grand Total:</span>
+                <span className="text-xl font-extrabold text-delgone-navy-900 font-mono">
+                  {formatCurrency(grandTotal)}
                 </span>
-                <p className="font-serif italic font-bold text-slate-800 leading-snug">
-                  {numberToWords(grandTotal)}
-                </p>
               </div>
 
-              <div className="flex justify-between items-center text-emerald-700 pt-1">
+              <div className="flex justify-between items-center text-emerald-700">
                 <span>Paid Now:</span>
                 <span className="font-mono font-bold">{formatCurrency(numAmountPaid)}</span>
               </div>
@@ -1303,22 +1300,22 @@ export const NewSalePage: React.FC = () => {
                 <span className="font-semibold uppercase text-slate-800">{paymentMethod}</span>
               </div>
               <div className="flex justify-between border-t border-slate-200/80 pt-2">
-                <span className="text-slate-500">Items Subtotal:</span>
-                <span className="font-mono text-slate-800">{formatCurrency(subtotal)}</span>
+                <span className="text-slate-600 font-medium">Subtotal (excl. VAT):</span>
+                <span className="font-mono font-bold text-slate-800">{formatCurrency(subtotalExclVat)}</span>
               </div>
               {numDiscount > 0 && (
                 <div className="flex justify-between text-rose-600">
                   <span>Discount:</span>
-                  <span className="font-mono">- {formatCurrency(numDiscount)}</span>
+                  <span className="font-mono font-bold">- {formatCurrency(numDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-delgone-navy-900">
-                <span className="font-medium">15% VAT:</span>
+                <span className="font-medium">VAT (15%):</span>
                 <span className="font-mono font-bold text-delgone-navy-800">+ {formatCurrency(vatAmount)}</span>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-sm">
-                <span>Grand Total:</span>
-                <span className="text-delgone-navy-900 font-mono">{formatCurrency(grandTotal)}</span>
+                <span>Grand Total (VAT inclusive):</span>
+                <span className="text-delgone-navy-900 font-mono font-black">{formatCurrency(grandTotal)}</span>
               </div>
               <div className="flex justify-between font-bold text-sm text-emerald-700">
                 <span>Amount Paid Now:</span>

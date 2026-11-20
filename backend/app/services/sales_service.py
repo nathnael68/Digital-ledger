@@ -133,20 +133,30 @@ def calculate_totals(
             }
         )
 
-    subtotal = round_currency(subtotal)
+    gross_inclusive = round_currency(subtotal)
     discount = round_currency(discount)
 
-    if discount > subtotal:
+    if discount > gross_inclusive:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Discount ({discount} ETB) cannot exceed the sale subtotal ({subtotal} ETB)",
+            detail=f"Discount ({discount} ETB) cannot exceed the sale total amount ({gross_inclusive} ETB)",
         )
 
+    grand_total = round_currency(gross_inclusive - discount)
     rate = vat_rate if vat_rate is not None else Decimal("0.00")
-    taxable = round_currency(subtotal - discount)
-    vat_amount = round_currency(taxable * rate)
-    grand_total = round_currency(taxable + vat_amount)
-    return subtotal, rate, vat_amount, grand_total, processed_lines
+
+    if rate > Decimal("0.00"):
+        # VAT is extracted from the VAT-inclusive price (after applicable discounts)
+        # Subtotal (excl. VAT) = grand_total / (1 + rate)
+        # VAT amount = grand_total - Subtotal
+        divisor = Decimal("1.00") + rate
+        subtotal_excl_vat = round_currency(grand_total / divisor)
+        vat_amount = round_currency(grand_total - subtotal_excl_vat)
+        return subtotal_excl_vat, rate, vat_amount, grand_total, processed_lines
+    else:
+        subtotal_val = gross_inclusive
+        vat_amount = Decimal("0.00")
+        return subtotal_val, rate, vat_amount, grand_total, processed_lines
 
 
 def build_sale_detail_response(sale: Sale) -> SaleDetailResponse:

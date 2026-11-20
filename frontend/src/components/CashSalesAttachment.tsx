@@ -17,11 +17,24 @@ export const CashSalesAttachment: React.FC<CashSalesAttachmentProps> = ({
   const isCredit = sale.payment_status === 'credit';
   const docTitle = isCredit ? 'Credit Sales Attachment' : 'Cash Sales Attachment';
 
-  const subtotalNum = parseFloat(String(sale.subtotal || 0));
+  const grandTotalNum = parseFloat(String(sale.grand_total || 0));
+  const subtotalNum = parseFloat(
+    String(
+      sale.subtotal !== undefined && sale.subtotal !== null
+        ? sale.subtotal
+        : grandTotalNum > 0
+        ? (grandTotalNum / 1.15).toFixed(2)
+        : 0
+    )
+  );
   const discountNum = parseFloat(String(sale.discount || 0));
-  const taxableBase = Math.max(0, subtotalNum - discountNum);
-  const vatNum = parseFloat(String(sale.vat_amount || taxableBase * 0.15 || 0));
-  const grandTotalNum = parseFloat(String(sale.grand_total || taxableBase + vatNum));
+  const vatNum = parseFloat(
+    String(
+      sale.vat_amount !== undefined && sale.vat_amount !== null
+        ? sale.vat_amount
+        : Math.max(0, grandTotalNum - subtotalNum)
+    )
+  );
 
   // Determine payment method label
   let paymentMethodLabel = '-';
