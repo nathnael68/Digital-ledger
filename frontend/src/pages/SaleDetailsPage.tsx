@@ -13,11 +13,13 @@ import {
   Calendar,
   Receipt,
   FileEdit,
+  Printer,
 } from 'lucide-react';
 import { saleService } from '../services/saleService';
 import { SaleDetail } from '../types/sale';
-import { formatCurrency, formatDateTime } from '../utils/formatters';
+import { formatCurrency, formatDateTime, numberToWords } from '../utils/formatters';
 import { StatusBadge } from '../components/StatusBadge';
+import { CashSalesAttachment } from '../components/CashSalesAttachment';
 
 export const SaleDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +46,9 @@ export const SaleDetailsPage: React.FC = () => {
   const [correctionReason, setCorrectionReason] = useState('');
   const [correctionError, setCorrectionError] = useState<string | null>(null);
   const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
+
+  // Attachment modal state
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
 
   // Void state
   const [showVoidModal, setShowVoidModal] = useState(false);
@@ -225,6 +230,16 @@ export const SaleDetailsPage: React.FC = () => {
         </button>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Print Cash Sales Attachment Button */}
+          <button
+            type="button"
+            onClick={() => setShowAttachmentModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-delgone-navy-300 bg-delgone-navy-50 text-delgone-navy-900 text-xs font-bold hover:bg-delgone-navy-100 shadow-xs transition-colors"
+          >
+            <Printer className="w-3.5 h-3.5 text-delgone-navy-700" />
+            Cash Sales Attachment
+          </button>
+
           {/* Record Payment Button */}
           {!isVoided && outstandingNum > 0 && (
             <button
@@ -410,39 +425,63 @@ export const SaleDetailsPage: React.FC = () => {
           </table>
         </div>
 
-        {/* Financial Summary Breakdown */}
-        <div className="border-t border-slate-100 pt-4 flex justify-end">
-          <div className="w-full sm:w-72 space-y-2 text-xs">
-            <div className="flex justify-between text-slate-600">
-              <span>Subtotal:</span>
-              <span className="font-mono font-semibold">{formatCurrency(sale.subtotal)}</span>
+        {/* Financial Summary Breakdown matching Cash Sales Attachment */}
+        <div className="border-t border-slate-100 pt-4 flex flex-col sm:flex-row justify-between items-start gap-4">
+          {/* Left Side: Payment Method & Amount In Words */}
+          <div className="space-y-2 text-xs flex-1 pr-4">
+            <div>
+              <span className="text-slate-500 font-semibold">Payment Method: </span>
+              <span className="font-bold text-slate-800 uppercase font-mono">
+                {sale.payments && sale.payments.length > 0
+                  ? Array.from(new Set(sale.payments.map((p) => p.payment_method.replace('_', ' ').toUpperCase()))).join(', ')
+                  : sale.payment_status === 'credit'
+                  ? 'ON CREDIT'
+                  : 'CASH'}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
+                Amount In Words:
+              </span>
+              <p className="font-serif italic font-bold text-slate-800 text-xs leading-snug">
+                {numberToWords(sale.grand_total)}
+              </p>
+            </div>
+          </div>
+
+          {/* Right Side: Totals Box */}
+          <div className="w-full sm:w-80 border border-slate-300 rounded-xl overflow-hidden divide-y divide-slate-200 text-xs font-sans shadow-2xs">
+            <div className="flex justify-between px-3.5 py-2 bg-slate-50">
+              <span className="font-semibold text-slate-700">Subtotal</span>
+              <span className="font-mono font-bold text-slate-900">{formatCurrency(sale.subtotal)}</span>
             </div>
             {parseFloat(String(sale.discount || 0)) > 0 && (
-              <div className="flex justify-between text-slate-600">
-                <span>Discount:</span>
-                <span className="font-mono font-semibold text-rose-600">
-                  - {formatCurrency(sale.discount)}
-                </span>
+              <div className="flex justify-between px-3.5 py-1.5 bg-white text-rose-600">
+                <span className="font-semibold">Discount</span>
+                <span className="font-mono font-bold">- {formatCurrency(sale.discount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-delgone-navy-900">
-              <span className="font-medium">15% VAT:</span>
-              <span className="font-mono font-bold text-delgone-navy-800">
+            <div className="flex justify-between px-3.5 py-2 bg-slate-50">
+              <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                VAT
+                <span className="text-[10px] bg-delgone-navy-50 text-delgone-navy-800 px-1 py-0.5 rounded border border-delgone-navy-200 font-mono font-bold">
+                  15%
+                </span>
+              </span>
+              <span className="font-mono font-bold text-slate-900">
                 + {formatCurrency(sale.vat_amount || 0)}
               </span>
             </div>
-            <div className="flex justify-between text-slate-900 font-bold border-t border-slate-200 pt-2 text-sm">
-              <span>Grand Total:</span>
-              <span className="font-mono text-delgone-navy-900">
-                {formatCurrency(sale.grand_total)}
-              </span>
+            <div className="flex justify-between px-3.5 py-2.5 bg-slate-200 text-slate-900 font-bold border-t border-slate-300">
+              <span className="text-xs uppercase tracking-wide">Grand Total</span>
+              <span className="font-mono font-black text-sm">{formatCurrency(sale.grand_total)}</span>
             </div>
-            <div className="flex justify-between text-emerald-700 font-semibold">
-              <span>Total Paid:</span>
+            <div className="flex justify-between px-3.5 py-1.5 bg-white text-emerald-700 font-semibold">
+              <span>Total Paid</span>
               <span className="font-mono">{formatCurrency(sale.total_paid)}</span>
             </div>
-            <div className="flex justify-between font-bold border-t border-slate-200 pt-2 text-sm">
-              <span className="text-slate-700">Outstanding Balance:</span>
+            <div className="flex justify-between px-3.5 py-2 bg-slate-50 font-bold">
+              <span className="text-slate-700">Outstanding Balance</span>
               <span
                 className={`font-mono ${
                   outstandingNum > 0 ? 'text-amber-700' : 'text-slate-800'
@@ -818,6 +857,13 @@ export const SaleDetailsPage: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+      {/* Cash Sales Attachment Printable Modal */}
+      {showAttachmentModal && (
+        <CashSalesAttachment
+          sale={sale}
+          onClose={() => setShowAttachmentModal(false)}
+        />
       )}
     </div>
   );

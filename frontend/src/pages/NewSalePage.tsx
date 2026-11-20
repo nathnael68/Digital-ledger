@@ -16,13 +16,15 @@ import {
   RefreshCw,
   X,
   AlertTriangle,
+  Printer,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { saleService } from '../services/saleService';
 import { customerService } from '../services/customerService';
 import { Customer, Product, SaleDetail, SaleItemInput } from '../types/sale';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, numberToWords } from '../utils/formatters';
 import { StatusBadge } from '../components/StatusBadge';
+import { CashSalesAttachment } from '../components/CashSalesAttachment';
 
 export const NewSalePage: React.FC = () => {
   const navigate = useNavigate();
@@ -88,6 +90,7 @@ export const NewSalePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const [completedSale, setCompletedSale] = useState<SaleDetail | null>(null);
 
   // Load initial catalog items
@@ -459,7 +462,15 @@ export const NewSalePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="mt-8 flex flex-wrap gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => setShowAttachmentModal(true)}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-delgone-navy-300 bg-delgone-navy-50 text-delgone-navy-900 text-sm font-bold hover:bg-delgone-navy-100 shadow-xs transition-colors"
+            >
+              <Printer className="w-4 h-4 text-delgone-navy-700" />
+              Print Cash Sales Attachment
+            </button>
             <button
               onClick={() => navigate(`/sales/${completedSale.id}`)}
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors"
@@ -481,6 +492,14 @@ export const NewSalePage: React.FC = () => {
               Record Another Sale
             </button>
           </div>
+
+          {/* Printable Sales Attachment Modal */}
+          {showAttachmentModal && completedSale && (
+            <CashSalesAttachment
+              sale={completedSale}
+              onClose={() => setShowAttachmentModal(false)}
+            />
+          )}
         </div>
       </div>
     );
@@ -988,31 +1007,44 @@ export const NewSalePage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center text-slate-600">
-                <span>Taxable Net:</span>
-                <span className="font-mono font-semibold">{formatCurrency(taxableAmount)}</span>
-              </div>
-
-              <div className="flex justify-between items-center text-delgone-navy-900">
-                <span className="flex items-center gap-1.5 font-medium">
-                  VAT (15%):
-                  <span className="text-[10px] font-bold bg-delgone-navy-50 text-delgone-navy-800 px-1.5 py-0.5 rounded border border-delgone-navy-200">
-                    15%
+              {/* Financial Totals Box matching Cash Sales Attachment */}
+              <div className="border border-slate-300 rounded-lg overflow-hidden divide-y divide-slate-200 text-xs font-sans">
+                <div className="flex justify-between items-center px-3 py-2 bg-slate-50">
+                  <span className="font-semibold text-slate-700">Subtotal:</span>
+                  <span className="font-mono font-bold text-slate-900">{formatCurrency(subtotal)}</span>
+                </div>
+                {numDiscount > 0 && (
+                  <div className="flex justify-between items-center px-3 py-1.5 bg-white text-rose-600">
+                    <span>Discount:</span>
+                    <span className="font-mono font-bold">- {formatCurrency(numDiscount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center px-3 py-2 bg-slate-50">
+                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                    VAT
+                    <span className="text-[10px] bg-delgone-navy-50 text-delgone-navy-800 px-1.5 py-0.5 rounded border border-delgone-navy-200 font-mono font-bold">
+                      15%
+                    </span>
                   </span>
-                </span>
-                <span className="font-mono font-bold text-delgone-navy-800">
-                  + {formatCurrency(vatAmount)}
-                </span>
+                  <span className="font-mono font-bold text-slate-900">+ {formatCurrency(vatAmount)}</span>
+                </div>
+                <div className="flex justify-between items-center px-3 py-2 bg-slate-200 text-slate-900 font-bold border-t border-slate-300">
+                  <span className="text-xs uppercase tracking-wide">Grand Total:</span>
+                  <span className="text-sm font-black font-mono">{formatCurrency(grandTotal)}</span>
+                </div>
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                <span className="text-base font-bold text-slate-900">Grand Total:</span>
-                <span className="text-xl font-extrabold text-delgone-navy-900 font-mono">
-                  {formatCurrency(grandTotal)}
+              {/* Amount In Words */}
+              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-[11px] space-y-0.5">
+                <span className="font-bold text-slate-500 uppercase tracking-wider block text-[10px]">
+                  Amount In Words:
                 </span>
+                <p className="font-serif italic font-bold text-slate-800 leading-snug">
+                  {numberToWords(grandTotal)}
+                </p>
               </div>
 
-              <div className="flex justify-between items-center text-emerald-700">
+              <div className="flex justify-between items-center text-emerald-700 pt-1">
                 <span>Paid Now:</span>
                 <span className="font-mono font-bold">{formatCurrency(numAmountPaid)}</span>
               </div>
