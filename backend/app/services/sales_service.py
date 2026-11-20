@@ -182,9 +182,12 @@ def build_sale_detail_response(sale: Sale) -> SaleDetailResponse:
         id=sale.id,
         sale_number=sale.sale_number,
         fs_number=sale.fs_number,
+        paper_receipt_number=sale.paper_receipt_number,
+        buyer_tin=sale.buyer_tin,
         customer_id=sale.customer_id,
         customer_name=sale.customer.name if sale.customer else None,
         customer_company_name=sale.customer.company_name if sale.customer else None,
+        customer_tin=sale.customer.tin_number if sale.customer else None,
         customer_phone=sale.customer.phone if sale.customer else None,
         sale_date=sale.sale_date,
         subtotal=sale.subtotal,
@@ -194,7 +197,6 @@ def build_sale_detail_response(sale: Sale) -> SaleDetailResponse:
         outstanding_balance=outstanding,
         amount_paid=total_paid,
         balance_due=outstanding,
-        paper_receipt_number=sale.paper_receipt_number,
         payment_status=sale.payment_status,
         notes=sale.notes,
         created_by=sale.created_by,
@@ -269,15 +271,20 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> SaleDet
         payment_status = "partial"
 
     # 6. Create Sale record
+    buyer_tin = sale_in.buyer_tin.strip() if sale_in.buyer_tin else None
+    if not buyer_tin and sale_in.customer_id and cust and cust.tin_number:
+        buyer_tin = cust.tin_number
+
     new_sale = Sale(
         sale_number=sale_number,
         fs_number=sale_in.fs_number.strip(),
+        paper_receipt_number=sale_in.paper_receipt_number.strip() if sale_in.paper_receipt_number else None,
+        buyer_tin=buyer_tin,
         customer_id=sale_in.customer_id,
         sale_date=now_tz,
         subtotal=subtotal,
         discount=round_currency(sale_in.discount),
         grand_total=grand_total,
-        paper_receipt_number=sale_in.paper_receipt_number.strip() if sale_in.paper_receipt_number else None,
         payment_status=payment_status,
         notes=sale_in.notes.strip() if sale_in.notes else None,
         created_by=current_user.id,
@@ -322,6 +329,7 @@ def create_sale(db: Session, sale_in: SaleCreate, current_user: User) -> SaleDet
         new_value={
             "sale_number": new_sale.sale_number,
             "fs_number": new_sale.fs_number,
+            "buyer_tin": new_sale.buyer_tin,
             "grand_total": str(new_sale.grand_total),
             "payment_status": new_sale.payment_status,
             "initial_payment": str(initial_amount),
@@ -405,8 +413,10 @@ def list_sales(
                 func.lower(Sale.sale_number).like(search_pattern),
                 func.lower(Sale.fs_number).like(search_pattern),
                 func.lower(Sale.paper_receipt_number).like(search_pattern),
+                func.lower(Sale.buyer_tin).like(search_pattern),
                 func.lower(Customer.name).like(search_pattern),
                 func.lower(Customer.company_name).like(search_pattern),
+                func.lower(Customer.tin_number).like(search_pattern),
                 func.lower(Customer.phone).like(search_pattern),
                 func.lower(Customer.alt_phone).like(search_pattern),
                 Sale.id.in_(
@@ -659,6 +669,7 @@ def correct_sale(
     old_values = {
         "fs_number": sale.fs_number,
         "paper_receipt_number": sale.paper_receipt_number,
+        "buyer_tin": sale.buyer_tin,
         "notes": sale.notes,
     }
 
@@ -666,6 +677,8 @@ def correct_sale(
         sale.fs_number = correction_in.fs_number.strip()
     if correction_in.paper_receipt_number is not None:
         sale.paper_receipt_number = correction_in.paper_receipt_number.strip() or None
+    if correction_in.buyer_tin is not None:
+        sale.buyer_tin = correction_in.buyer_tin.strip() or None
     if correction_in.notes is not None:
         sale.notes = correction_in.notes.strip() or None
 
@@ -679,6 +692,7 @@ def correct_sale(
         new_value={
             "fs_number": sale.fs_number,
             "paper_receipt_number": sale.paper_receipt_number,
+            "buyer_tin": sale.buyer_tin,
             "notes": sale.notes,
         },
         reason=correction_in.reason,

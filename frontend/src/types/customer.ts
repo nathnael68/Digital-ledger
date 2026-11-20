@@ -2,6 +2,7 @@ export interface Customer {
   id: string;
   name: string;
   company_name?: string | null;
+  tin_number?: string | null;
   phone?: string | null;
   alt_phone?: string | null;
   email?: string | null;
@@ -15,6 +16,7 @@ export interface Customer {
 export interface CustomerCreateInput {
   name: string;
   company_name?: string;
+  tin_number?: string;
   phone?: string;
   alt_phone?: string;
   email?: string;
@@ -26,6 +28,7 @@ export interface CustomerCreateInput {
 export interface CustomerUpdateInput {
   name?: string;
   company_name?: string;
+  tin_number?: string;
   phone?: string;
   alt_phone?: string;
   email?: string;
@@ -58,6 +61,7 @@ export interface CustomerFinancialSummary {
   customer_id: string;
   customer_name: string;
   company_name?: string | null;
+  tin_number?: string | null;
   phone?: string | null;
   total_sales_amount: number | string;
   total_amount_paid: number | string;
@@ -71,6 +75,7 @@ export interface CustomerOutstandingItem {
   id: string;
   name: string;
   company_name?: string | null;
+  tin_number?: string | null;
   phone?: string | null;
   alt_phone?: string | null;
   total_purchases: number | string;

@@ -11,6 +11,7 @@ export interface Customer {
   id: string;
   name: string;
   company_name?: string | null;
+  tin_number?: string | null;
   phone?: string | null;
   address?: string | null;
   is_active?: boolean;
@@ -36,6 +37,7 @@ export interface SaleCreatePayload {
   customer_id?: string | null;
   fs_number: string;
   paper_receipt_number?: string;
+  buyer_tin?: string;
   discount?: number | string;
   notes?: string;
   items: {
@@ -91,6 +93,7 @@ export interface SaleDetail {
   amount_paid?: number | string;
   balance_due?: number | string;
   paper_receipt_number?: string | null;
+  buyer_tin?: string | null;
   payment_status: 'paid' | 'partial' | 'credit' | 'voided';
   notes?: string | null;
   created_by: string;
@@ -101,6 +104,7 @@ export interface SaleDetail {
   voided_by?: string | null;
   voided_by_name?: string | null;
   void_reason?: string | null;
+  customer_tin?: string | null;
   items: SaleItemResponse[];
   payments: PaymentRecord[];
 }
@@ -116,6 +120,7 @@ export interface SaleListResponse {
 export interface SaleCorrectionPayload {
   fs_number?: string;
   paper_receipt_number?: string;
+  buyer_tin?: string;
   notes?: string;
   reason: string;
 }

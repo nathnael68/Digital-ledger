@@ -59,6 +59,7 @@ export const CustomersPage: React.FC = () => {
   // Form states for Add/Edit
   const [formName, setFormName] = useState('');
   const [formCompany, setFormCompany] = useState('');
+  const [formTin, setFormTin] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formAltPhone, setFormAltPhone] = useState('');
   const [formEmail, setFormEmail] = useState('');
@@ -113,6 +114,7 @@ export const CustomersPage: React.FC = () => {
   const openAddModal = () => {
     setFormName('');
     setFormCompany('');
+    setFormTin('');
     setFormPhone('');
     setFormAltPhone('');
     setFormEmail('');
@@ -131,6 +133,7 @@ export const CustomersPage: React.FC = () => {
     setSelectedCustomer(cust);
     setFormName(cust.name);
     setFormCompany(cust.company_name || '');
+    setFormTin(cust.tin_number || '');
     setFormPhone(cust.phone || '');
     setFormAltPhone(cust.alt_phone || '');
     setFormEmail(cust.email || '');
@@ -168,6 +171,7 @@ export const CustomersPage: React.FC = () => {
           company_name: formCompany.trim() || undefined,
           phone: formPhone.trim() || undefined,
           email: formEmail.trim() || undefined,
+          tin_number: formTin.trim() || undefined,
         });
 
         if (dupCheck.has_matches) {
@@ -182,6 +186,7 @@ export const CustomersPage: React.FC = () => {
       const payload: CustomerCreateInput = {
         name: formName.trim(),
         company_name: formCompany.trim() || undefined,
+        tin_number: formTin.trim() || undefined,
         phone: formPhone.trim() || undefined,
         alt_phone: formAltPhone.trim() || undefined,
         email: formEmail.trim() || undefined,
@@ -222,6 +227,7 @@ export const CustomersPage: React.FC = () => {
       const payload: CustomerUpdateInput = {
         name: formName.trim(),
         company_name: formCompany.trim() || undefined,
+        tin_number: formTin.trim() || undefined,
         phone: formPhone.trim() || undefined,
         alt_phone: formAltPhone.trim() || undefined,
         email: formEmail.trim() || undefined,
@@ -452,6 +458,12 @@ export const CustomersPage: React.FC = () => {
                             <span>{cust.company_name}</span>
                           </div>
                         ) : null}
+                        {cust.tin_number ? (
+                          <div className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded mt-1 border border-slate-200">
+                            <span className="font-semibold text-slate-500 font-sans">TIN:</span>
+                            <span>{cust.tin_number}</span>
+                          </div>
+                        ) : null}
                       </td>
 
                       {/* Contact */}
@@ -671,17 +683,31 @@ export const CustomersPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Business / Company Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formCompany}
-                  onChange={(e) => setFormCompany(e.target.value)}
-                  placeholder="e.g. Abyssinia Graphic Design & Print"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Business / Company Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formCompany}
+                    onChange={(e) => setFormCompany(e.target.value)}
+                    placeholder="e.g. Abyssinia Graphic Design & Print"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    TIN Number (10 digits, Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formTin}
+                    onChange={(e) => setFormTin(e.target.value)}
+                    placeholder="e.g. 0012345678"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500 font-mono"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -813,16 +839,30 @@ export const CustomersPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Business / Company Name
-                </label>
-                <input
-                  type="text"
-                  value={formCompany}
-                  onChange={(e) => setFormCompany(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Business / Company Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formCompany}
+                    onChange={(e) => setFormCompany(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    TIN Number (10 digits, Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formTin}
+                    onChange={(e) => setFormTin(e.target.value)}
+                    placeholder="e.g. 0012345678"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500 font-mono"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

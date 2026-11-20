@@ -14,6 +14,7 @@ class Customer(Base):
     )
     name: Mapped[str] = mapped_column(String(150), index=True, nullable=False)
     company_name: Mapped[Optional[str]] = mapped_column(String(150), index=True, nullable=True)
+    tin_number: Mapped[Optional[str]] = mapped_column(String(50), index=True, nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(50), index=True, nullable=True)
     alt_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(150), index=True, nullable=True)

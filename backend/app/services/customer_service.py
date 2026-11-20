@@ -38,17 +38,23 @@ def check_duplicate_customers(
     db: Session,
     name: str,
     company_name: Optional[str] = None,
+    tin_number: Optional[str] = None,
     phone: Optional[str] = None,
     email: Optional[str] = None,
     exclude_id: Optional[uuid.UUID] = None,
 ) -> Tuple[bool, Optional[str], List[Customer]]:
     """
-    Checks if an existing customer may be a duplicate based on phone, email, or exact name+company combination.
+    Checks if an existing customer may be a duplicate based on TIN, phone, email, or exact name+company combination.
     Does NOT automatically merge records.
     """
     conditions = []
 
-    # 1. Match phone if provided
+    # 1. Match TIN number if provided
+    if tin_number and tin_number.strip():
+        cleaned_tin = tin_number.strip()
+        conditions.append(Customer.tin_number == cleaned_tin)
+
+    # 2. Match phone if provided
     if phone and phone.strip():
         cleaned_phone = phone.strip()
         conditions.append(Customer.phone == cleaned_phone)
@@ -83,7 +89,9 @@ def check_duplicate_customers(
     # Determine matched reason
     first_match = matches[0]
     matched_by = "details"
-    if phone and (first_match.phone == phone.strip() or first_match.alt_phone == phone.strip()):
+    if tin_number and first_match.tin_number == tin_number.strip():
+        matched_by = f"TIN number '{tin_number.strip()}'"
+    elif phone and (first_match.phone == phone.strip() or first_match.alt_phone == phone.strip()):
         matched_by = f"phone number '{phone.strip()}'"
     elif email and first_match.email == email.strip().lower():
         matched_by = f"email address '{email.strip().lower()}'"
@@ -111,6 +119,7 @@ def create_customer(
         db=db,
         name=customer_in.name,
         company_name=customer_in.company_name,
+        tin_number=customer_in.tin_number,
         phone=customer_in.phone,
         email=customer_in.email,
     )
@@ -126,6 +135,7 @@ def create_customer(
                         "id": str(m.id),
                         "name": m.name,
                         "company_name": m.company_name,
+                        "tin_number": m.tin_number,
                         "phone": m.phone,
                         "email": m.email,
                     }
@@ -138,6 +148,7 @@ def create_customer(
         id=uuid.uuid4(),
         name=customer_in.name.strip(),
         company_name=customer_in.company_name.strip() if customer_in.company_name else None,
+        tin_number=customer_in.tin_number.strip() if customer_in.tin_number else None,
         phone=customer_in.phone.strip() if customer_in.phone else None,
         alt_phone=customer_in.alt_phone.strip() if customer_in.alt_phone else None,
         email=customer_in.email.strip().lower() if customer_in.email else None,
@@ -158,6 +169,7 @@ def create_customer(
         new_value={
             "name": customer.name,
             "company_name": customer.company_name,
+            "tin_number": customer.tin_number,
             "phone": customer.phone,
             "email": customer.email,
             "is_active": customer.is_active,
@@ -189,6 +201,7 @@ def update_customer(
     old_values: Dict[str, Any] = {
         "name": customer.name,
         "company_name": customer.company_name,
+        "tin_number": customer.tin_number,
         "phone": customer.phone,
         "alt_phone": customer.alt_phone,
         "email": customer.email,
@@ -207,6 +220,12 @@ def update_customer(
         if val != customer.company_name:
             customer.company_name = val
             new_values["company_name"] = customer.company_name
+
+    if customer_in.tin_number is not None:
+        val = customer_in.tin_number.strip() if customer_in.tin_number.strip() else None
+        if val != customer.tin_number:
+            customer.tin_number = val
+            new_values["tin_number"] = customer.tin_number
 
     if customer_in.phone is not None:
         val = customer_in.phone.strip() if customer_in.phone.strip() else None
@@ -357,6 +376,7 @@ def compute_customer_financials(db: Session, customer_id: uuid.UUID) -> Customer
         customer_id=customer.id,
         customer_name=customer.name,
         company_name=customer.company_name,
+        tin_number=customer.tin_number,
         total_sales_revenue=round_currency(total_sales_rev or Decimal("0.00")),
         total_payments_received=round_currency(total_paid),
         outstanding_balance=round_currency(outstanding),
@@ -388,6 +408,7 @@ def list_customers(
             or_(
                 func.lower(Customer.name).like(term),
                 func.lower(Customer.company_name).like(term),
+                func.lower(Customer.tin_number).like(term),
                 func.lower(Customer.phone).like(term),
                 func.lower(Customer.alt_phone).like(term),
                 func.lower(Customer.email).like(term),
@@ -430,6 +451,7 @@ def list_customers(
                 id=c.id,
                 name=c.name,
                 company_name=c.company_name,
+                tin_number=c.tin_number,
                 phone=c.phone,
                 alt_phone=c.alt_phone,
                 email=c.email,
@@ -702,6 +724,7 @@ def get_customers_outstanding(
                 customer_id=cust.id,
                 name=cust.name,
                 company_name=cust.company_name,
+                tin_number=cust.tin_number,
                 phone=cust.phone,
                 alt_phone=cust.alt_phone,
                 total_sales=round_currency(total_sales_amount),

@@ -58,6 +58,7 @@ export const CustomerProfilePage: React.FC = () => {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [formName, setFormName] = useState('');
   const [formCompany, setFormCompany] = useState('');
+  const [formTin, setFormTin] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formAltPhone, setFormAltPhone] = useState('');
   const [formEmail, setFormEmail] = useState('');
@@ -103,6 +104,7 @@ export const CustomerProfilePage: React.FC = () => {
     if (!customer) return;
     setFormName(customer.name);
     setFormCompany(customer.company_name || '');
+    setFormTin(customer.tin_number || '');
     setFormPhone(customer.phone || '');
     setFormAltPhone(customer.alt_phone || '');
     setFormEmail(customer.email || '');
@@ -135,6 +137,7 @@ export const CustomerProfilePage: React.FC = () => {
       const payload: CustomerUpdateInput = {
         name: formName.trim(),
         company_name: formCompany.trim() || undefined,
+        tin_number: formTin.trim() || undefined,
         phone: formPhone.trim() || undefined,
         alt_phone: formAltPhone.trim() || undefined,
         email: formEmail.trim() || undefined,
@@ -265,6 +268,12 @@ export const CustomerProfilePage: React.FC = () => {
                     <div className="flex items-center gap-1.5 font-mono">
                       <Phone className="w-3.5 h-3.5 text-slate-400" />
                       <span>{customer.phone}</span>
+                    </div>
+                  )}
+                  {customer.tin_number && (
+                    <div className="inline-flex items-center gap-1.5 font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 font-sans">TIN:</span>
+                      <span className="text-slate-800 font-semibold">{customer.tin_number}</span>
                     </div>
                   )}
                   {customer.alt_phone && (
@@ -712,6 +721,12 @@ export const CustomerProfilePage: React.FC = () => {
                 </span>
               </div>
               <div>
+                <span className="text-slate-500 font-medium block">TIN Number (Taxpayer ID):</span>
+                <span className="font-mono font-medium text-slate-800">
+                  {customer.tin_number || 'Not recorded'}
+                </span>
+              </div>
+              <div>
                 <span className="text-slate-500 font-medium block">Primary Phone:</span>
                 <span className="font-mono font-medium text-slate-800">
                   {customer.phone || 'Not recorded'}
@@ -805,16 +820,30 @@ export const CustomerProfilePage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Business / Company Name
-                </label>
-                <input
-                  type="text"
-                  value={formCompany}
-                  onChange={(e) => setFormCompany(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Business / Company Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formCompany}
+                    onChange={(e) => setFormCompany(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    TIN Number (10 digits, Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formTin}
+                    onChange={(e) => setFormTin(e.target.value)}
+                    placeholder="e.g. 0012345678"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500 font-mono"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

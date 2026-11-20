@@ -49,6 +49,9 @@ class Sale(Base):
     fs_number: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, index=True
     )
+    buyer_tin: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, index=True
+    )
     idempotency_key: Mapped[Optional[str]] = mapped_column(
         String(100), unique=True, index=True, nullable=True
     )

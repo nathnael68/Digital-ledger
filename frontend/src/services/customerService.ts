@@ -42,6 +42,7 @@ export const customerService = {
     company_name?: string;
     phone?: string;
     email?: string;
+    tin_number?: string;
   }): Promise<DuplicateCheckResult> {
     const res = await apiClient.get<DuplicateCheckResult>('/customers/check-duplicate', {
       params,

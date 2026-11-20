@@ -35,6 +35,7 @@ def validate_email_address(v: Optional[str]) -> Optional[str]:
 class CustomerBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=150, description="Customer or primary contact person name")
     company_name: Optional[str] = Field(None, max_length=150, description="Business or organization name")
+    tin_number: Optional[str] = Field(None, max_length=50, description="Taxpayer Identification Number (TIN)")
     phone: Optional[str] = Field(None, max_length=50)
     alt_phone: Optional[str] = Field(None, max_length=50)
     email: Optional[str] = Field(None, max_length=150)
@@ -49,7 +50,7 @@ class CustomerBase(BaseModel):
             raise ValueError("Customer name must be at least 2 characters long")
         return cleaned
 
-    @field_validator("company_name", "alt_phone", "notes")
+    @field_validator("company_name", "tin_number", "alt_phone", "notes")
     @classmethod
     def clean_optional_strings(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
@@ -78,6 +79,7 @@ class CustomerCreate(CustomerBase):
 class CustomerUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=150)
     company_name: Optional[str] = Field(None, max_length=150)
+    tin_number: Optional[str] = Field(None, max_length=50)
     phone: Optional[str] = Field(None, max_length=50)
     alt_phone: Optional[str] = Field(None, max_length=50)
     email: Optional[str] = Field(None, max_length=150)
@@ -121,6 +123,7 @@ class CustomerResponse(BaseModel):
     id: uuid.UUID
     name: str
     company_name: Optional[str] = None
+    tin_number: Optional[str] = None
     phone: Optional[str] = None
     alt_phone: Optional[str] = None
     email: Optional[str] = None
@@ -137,6 +140,7 @@ class CustomerListItem(BaseModel):
     id: uuid.UUID
     name: str
     company_name: Optional[str] = None
+    tin_number: Optional[str] = None
     phone: Optional[str] = None
     alt_phone: Optional[str] = None
     email: Optional[str] = None
@@ -165,6 +169,7 @@ class CustomerFinancialSummary(BaseModel):
     customer_id: uuid.UUID
     customer_name: str
     company_name: Optional[str] = None
+    tin_number: Optional[str] = None
     total_sales_revenue: Decimal
     total_payments_received: Decimal
     outstanding_balance: Decimal
@@ -179,6 +184,7 @@ class CustomerOutstandingItem(BaseModel):
     customer_id: uuid.UUID
     name: str
     company_name: Optional[str] = None
+    tin_number: Optional[str] = None
     phone: Optional[str] = None
     alt_phone: Optional[str] = None
     total_sales: Decimal

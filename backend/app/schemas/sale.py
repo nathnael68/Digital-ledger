@@ -50,6 +50,7 @@ class SaleCreate(BaseModel):
     customer_id: Optional[uuid.UUID] = None
     fs_number: str = Field(..., min_length=1, max_length=100, description="Fiscal Customs Reference")
     paper_receipt_number: Optional[str] = Field(None, max_length=100)
+    buyer_tin: Optional[str] = Field(None, max_length=50, description="Buyer Taxpayer Identification Number")
     discount: Decimal = Field(Decimal("0.00"), ge=0)
     notes: Optional[str] = None
     items: List[SaleItemCreate] = Field(..., min_length=1)
@@ -75,6 +76,7 @@ class SaleCreate(BaseModel):
 class SaleCorrectionInput(BaseModel):
     fs_number: Optional[str] = Field(None, min_length=1, max_length=100)
     paper_receipt_number: Optional[str] = Field(None, max_length=100)
+    buyer_tin: Optional[str] = Field(None, max_length=50)
     notes: Optional[str] = None
     reason: str = Field(..., min_length=3, max_length=500, description="Mandatory reason for audit trail")
 
@@ -125,9 +127,12 @@ class SaleDetailResponse(BaseModel):
     id: uuid.UUID
     sale_number: str
     fs_number: Optional[str] = None
+    paper_receipt_number: Optional[str] = None
+    buyer_tin: Optional[str] = None
     customer_id: Optional[uuid.UUID] = None
     customer_name: Optional[str] = None
     customer_company_name: Optional[str] = None
+    customer_tin: Optional[str] = None
     customer_phone: Optional[str] = None
     sale_date: datetime
     subtotal: Decimal

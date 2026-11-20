@@ -39,6 +39,7 @@ export const SaleDetailsPage: React.FC = () => {
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
   const [correctedFsNumber, setCorrectedFsNumber] = useState('');
   const [correctedReceiptNumber, setCorrectedReceiptNumber] = useState('');
+  const [correctedBuyerTin, setCorrectedBuyerTin] = useState('');
   const [correctedNotes, setCorrectedNotes] = useState('');
   const [correctionReason, setCorrectionReason] = useState('');
   const [correctionError, setCorrectionError] = useState<string | null>(null);
@@ -60,6 +61,7 @@ export const SaleDetailsPage: React.FC = () => {
       // Initialize correction fields
       setCorrectedFsNumber(data.fs_number || '');
       setCorrectedReceiptNumber(data.paper_receipt_number || '');
+      setCorrectedBuyerTin(data.buyer_tin || '');
       setCorrectedNotes(data.notes || '');
       setPaymentAmount(data.outstanding_balance);
     } catch (err: any) {
@@ -127,6 +129,7 @@ export const SaleDetailsPage: React.FC = () => {
       await saleService.correctSale(sale.id, {
         fs_number: correctedFsNumber.trim() || undefined,
         paper_receipt_number: correctedReceiptNumber.trim() || undefined,
+        buyer_tin: correctedBuyerTin.trim() || undefined,
         notes: correctedNotes.trim() || undefined,
         reason: correctionReason.trim(),
       });
@@ -309,7 +312,7 @@ export const SaleDetailsPage: React.FC = () => {
         </div>
 
         {/* Reference Badges Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-xs">
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
             <p className="text-slate-400 font-medium mb-1">Customs FS Number</p>
             <p className="font-mono font-bold text-slate-900 text-sm">
@@ -321,6 +324,13 @@ export const SaleDetailsPage: React.FC = () => {
             <p className="text-slate-400 font-medium mb-1">Paper Receipt #</p>
             <p className="font-semibold text-slate-800 text-sm">
               {sale.paper_receipt_number || '-'}
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+            <p className="text-slate-400 font-medium mb-1">Buyer TIN Number</p>
+            <p className="font-mono font-bold text-slate-900 text-sm">
+              {sale.buyer_tin || sale.customer_tin || '-'}
             </p>
           </div>
 
@@ -663,6 +673,19 @@ export const SaleDetailsPage: React.FC = () => {
                   onChange={(e) => setCorrectedReceiptNumber(e.target.value)}
                   placeholder="e.g., PR-01923"
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-delgone-navy-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Buyer TIN Number
+                </label>
+                <input
+                  type="text"
+                  value={correctedBuyerTin}
+                  onChange={(e) => setCorrectedBuyerTin(e.target.value)}
+                  placeholder="e.g., 0012345678"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-delgone-navy-500"
                 />
               </div>
 

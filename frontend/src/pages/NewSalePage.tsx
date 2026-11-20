@@ -32,6 +32,7 @@ export const NewSalePage: React.FC = () => {
   // Form State
   const [fsNumber, setFsNumber] = useState('');
   const [paperReceiptNumber, setPaperReceiptNumber] = useState('');
+  const [buyerTin, setBuyerTin] = useState('');
   const [notes, setNotes] = useState('');
 
   // Customer State
@@ -43,6 +44,7 @@ export const NewSalePage: React.FC = () => {
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [newCustName, setNewCustName] = useState('');
   const [newCustCompany, setNewCustCompany] = useState('');
+  const [newCustTin, setNewCustTin] = useState('');
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
   const [newCustConfirmDup, setNewCustConfirmDup] = useState(false);
@@ -204,15 +206,20 @@ export const NewSalePage: React.FC = () => {
       const newCust = await customerService.createCustomer({
         name: newCustName.trim(),
         company_name: newCustCompany.trim() || undefined,
+        tin_number: newCustTin.trim() || undefined,
         phone: newCustPhone.trim() || undefined,
         address: newCustAddress.trim() || undefined,
         confirm_duplicate: newCustConfirmDup,
       });
       setSelectedCustomer(newCust as any);
+      if (newCustTin.trim() && !buyerTin) {
+        setBuyerTin(newCustTin.trim());
+      }
       setIsWalkIn(false);
       setShowNewCustomerModal(false);
       setNewCustName('');
       setNewCustCompany('');
+      setNewCustTin('');
       setNewCustPhone('');
       setNewCustAddress('');
       setNewCustConfirmDup(false);
@@ -290,6 +297,7 @@ export const NewSalePage: React.FC = () => {
       const payload = {
         fs_number: fsNumber.trim(),
         paper_receipt_number: paperReceiptNumber.trim() || undefined,
+        buyer_tin: buyerTin.trim() || undefined,
         customer_id: isWalkIn ? null : selectedCustomer?.id,
         discount: numDiscount,
         notes: notes.trim() || undefined,
@@ -326,6 +334,7 @@ export const NewSalePage: React.FC = () => {
   const resetForm = () => {
     setFsNumber('');
     setPaperReceiptNumber('');
+    setBuyerTin('');
     setNotes('');
     setIsWalkIn(true);
     setSelectedCustomer(null);
@@ -377,6 +386,14 @@ export const NewSalePage: React.FC = () => {
                 <span className="text-sm text-slate-500">Paper Receipt #:</span>
                 <span className="text-sm font-medium text-slate-800">
                   {completedSale.paper_receipt_number}
+                </span>
+              </div>
+            )}
+            {completedSale.buyer_tin && (
+              <div className="flex justify-between items-center py-3">
+                <span className="text-sm text-slate-500">Buyer TIN #:</span>
+                <span className="text-sm font-mono text-slate-800">
+                  {completedSale.buyer_tin}
                 </span>
               </div>
             )}
@@ -478,7 +495,7 @@ export const NewSalePage: React.FC = () => {
               1. Document References
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   FS Number (Customs Fiscal Ref) <span className="text-rose-600 font-bold">*</span>
@@ -505,10 +522,27 @@ export const NewSalePage: React.FC = () => {
                   value={paperReceiptNumber}
                   onChange={(e) => setPaperReceiptNumber(e.target.value)}
                   placeholder="e.g., PR-00892"
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500 font-mono"
                 />
                 <span className="text-[11px] text-slate-500 mt-1 block">
                   Physical receipt voucher book serial number.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Buyer TIN Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={buyerTin}
+                  onChange={(e) => setBuyerTin(e.target.value)}
+                  placeholder="e.g., 0012345678"
+                  maxLength={50}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500 font-mono"
+                />
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  10-digit Taxpayer Identification Number.
                 </span>
               </div>
             </div>
@@ -585,6 +619,9 @@ export const NewSalePage: React.FC = () => {
                         key={c.id}
                         onClick={() => {
                           setSelectedCustomer(c);
+                          if (c.tin_number && !buyerTin) {
+                            setBuyerTin(c.tin_number);
+                          }
                           setCustomerSearch('');
                           setCustomerOptions([]);
                         }}
@@ -1076,6 +1113,20 @@ export const NewSalePage: React.FC = () => {
                   onChange={(e) => setNewCustCompany(e.target.value)}
                   placeholder="e.g., Lucy Printing Solutions"
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-delgone-navy-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  TIN Number (10 digits, Optional)
+                </label>
+                <input
+                  type="text"
+                  value={newCustTin}
+                  onChange={(e) => setNewCustTin(e.target.value)}
+                  placeholder="e.g., 0012345678"
+                  maxLength={50}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-delgone-navy-500 font-mono"
                 />
               </div>
 

@@ -34,7 +34,13 @@ export const saleService = {
   /**
    * Quick-create a new customer profile.
    */
-  async createCustomer(data: { name: string; phone?: string; address?: string }): Promise<Customer> {
+  async createCustomer(data: {
+    name: string;
+    phone?: string;
+    address?: string;
+    company_name?: string;
+    tin_number?: string;
+  }): Promise<Customer> {
     const res = await apiClient.post<Customer>('/customers', data);
     return res.data;
   },
