@@ -15,6 +15,16 @@ async def lifespan(app: FastAPI):
     db_ok = check_db_health()
     if db_ok:
         logger.info("Database connectivity verified successfully.")
+        # Ensure all tables exist in PostgreSQL
+        try:
+            from backend.app.db.base import Base
+            from backend.app.db.session import engine
+            import backend.app.models  # registers all models
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables verified/created successfully.")
+        except Exception as ddl_err:
+            logger.warning("Table creation notice: %s", str(ddl_err))
+
         try:
             import os
             from alembic.config import Config
@@ -37,6 +47,30 @@ async def lifespan(app: FastAPI):
                 bootstrap_admin(admin_u, admin_n, admin_p)
             except Exception as admin_err:
                 logger.info("Admin bootstrap notice: %s", str(admin_err))
+
+        # Seed initial catalog products if empty
+        try:
+            from backend.app.db.session import SessionLocal
+            from backend.app.models.product import Product
+            from decimal import Decimal
+            seed_db = SessionLocal()
+            try:
+                if seed_db.query(Product).count() == 0:
+                    sample_products = [
+                        Product(name="RING 10MM", unit="pcs", default_price=Decimal("8.70"), is_active=True),
+                        Product(name="RING 8MM", unit="pcs", default_price=Decimal("6.96"), is_active=True),
+                        Product(name="Thermal Receipt Paper Roll 80mm", unit="pack", default_price=Decimal("850.00"), is_active=True),
+                        Product(name="Glossy Photo Paper A4 220gsm", unit="pack", default_price=Decimal("1200.00"), is_active=True),
+                        Product(name="Premium Banner Fabric 3.2m", unit="roll", default_price=Decimal("5400.00"), is_active=True),
+                        Product(name="Self-Adhesive Vinyl Glossy", unit="roll", default_price=Decimal("3800.00"), is_active=True),
+                    ]
+                    seed_db.add_all(sample_products)
+                    seed_db.commit()
+                    logger.info("Seeded initial printing products into catalog.")
+            finally:
+                seed_db.close()
+        except Exception as seed_err:
+            logger.warning("Product catalog seed notice: %s", str(seed_err))
     else:
         logger.warning(
             "Initial database connection could not be established. "
@@ -97,7 +131,16 @@ async def add_security_headers(request: Request, call_next):
 @app.middleware("http")
 async def add_process_time_and_log(request: Request, call_next):
     start_time = time.time()
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        import traceback
+        tb = traceback.format_exc()
+        logger.error("Unhandled error processing %s %s: %s\n%s", request.method, request.url.path, str(exc), tb)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error", "error": str(exc), "traceback": tb[-1000:]},
+        )
     process_time = (time.time() - start_time) * 1000
     response.headers["X-Process-Time-Ms"] = f"{process_time:.2f}"
     logger.info(
