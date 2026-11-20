@@ -201,6 +201,15 @@ export const NewSalePage: React.FC = () => {
       setCustModalError('Customer name is required');
       return;
     }
+    if (!newCustTin.trim()) {
+      setCustModalError('TIN Number is mandatory.');
+      return;
+    }
+    const cleanCustTin = newCustTin.trim().replace(/[\s-]/g, '');
+    if (!/^\d{9,12}$/.test(cleanCustTin)) {
+      setCustModalError('TIN Number must be a valid 10-digit number (e.g., 0012345678).');
+      return;
+    }
     setCustModalError(null);
     try {
       const newCust = await customerService.createCustomer({
@@ -244,6 +253,17 @@ export const NewSalePage: React.FC = () => {
 
     if (!fsNumber.trim()) {
       setError('FS Number (Customs Fiscal Reference) is mandatory.');
+      return;
+    }
+
+    if (!buyerTin.trim()) {
+      setError('Buyer TIN Number is mandatory.');
+      return;
+    }
+
+    const cleanBuyerTin = buyerTin.trim().replace(/[\s-]/g, '');
+    if (!/^\d{9,12}$/.test(cleanBuyerTin)) {
+      setError('Buyer TIN Number must be a valid 10-digit number (e.g., 0012345678).');
       return;
     }
 
@@ -531,10 +551,11 @@ export const NewSalePage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Buyer TIN Number (Optional)
+                  Buyer TIN Number <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <input
                   type="text"
+                  required
                   value={buyerTin}
                   onChange={(e) => setBuyerTin(e.target.value)}
                   placeholder="e.g., 0012345678"
@@ -542,7 +563,7 @@ export const NewSalePage: React.FC = () => {
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-delgone-navy-500 font-mono"
                 />
                 <span className="text-[11px] text-slate-500 mt-1 block">
-                  10-digit Taxpayer Identification Number.
+                  Mandatory 10-digit Taxpayer Identification Number.
                 </span>
               </div>
             </div>
@@ -1118,10 +1139,11 @@ export const NewSalePage: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  TIN Number (10 digits, Optional)
+                  TIN Number (10 digits) <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <input
                   type="text"
+                  required
                   value={newCustTin}
                   onChange={(e) => setNewCustTin(e.target.value)}
                   placeholder="e.g., 0012345678"

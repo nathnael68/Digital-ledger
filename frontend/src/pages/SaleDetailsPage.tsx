@@ -119,6 +119,17 @@ export const SaleDetailsPage: React.FC = () => {
     if (!sale) return;
     setCorrectionError(null);
 
+    if (!correctedBuyerTin.trim()) {
+      setCorrectionError('Buyer TIN Number is mandatory.');
+      return;
+    }
+
+    const cleanBuyerTin = correctedBuyerTin.trim().replace(/[\s-]/g, '');
+    if (!/^\d{9,12}$/.test(cleanBuyerTin)) {
+      setCorrectionError('Buyer TIN Number must be a valid 10-digit number (e.g., 0012345678).');
+      return;
+    }
+
     if (!correctionReason.trim() || correctionReason.trim().length < 3) {
       setCorrectionError('A clear correction reason (at least 3 characters) is required for audit history.');
       return;
@@ -678,10 +689,11 @@ export const SaleDetailsPage: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Buyer TIN Number
+                  Buyer TIN Number <span className="text-rose-600 font-bold">*</span>
                 </label>
                 <input
                   type="text"
+                  required
                   value={correctedBuyerTin}
                   onChange={(e) => setCorrectedBuyerTin(e.target.value)}
                   placeholder="e.g., 0012345678"

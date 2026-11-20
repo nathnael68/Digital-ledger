@@ -129,10 +129,12 @@ describe('Customer Directory Page', () => {
 
     const nameInput = screen.getByPlaceholderText('e.g. Abebe Bekele');
     const companyInput = screen.getByPlaceholderText('e.g. Abyssinia Graphic Design & Print');
+    const tinInput = screen.getByPlaceholderText('e.g. 0012345678');
     const phoneInput = screen.getByPlaceholderText('e.g. 0911234567 or +251...');
 
     fireEvent.change(nameInput, { target: { value: 'Dawit Yohannes' } });
     fireEvent.change(companyInput, { target: { value: 'Dawit Advertising' } });
+    fireEvent.change(tinInput, { target: { value: '0012345678' } });
     fireEvent.change(phoneInput, { target: { value: '0944556677' } });
 
     const submitBtn = screen.getByText('Register Customer');

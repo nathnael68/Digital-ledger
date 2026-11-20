@@ -108,6 +108,10 @@ describe('NewSalePage Component', () => {
     const fsInput = screen.getByPlaceholderText(/FS-2026-00451/i);
     fireEvent.change(fsInput, { target: { value: 'FS-2026-00100' } });
 
+    // 1b. Enter Buyer TIN Number
+    const tinInput = screen.getByPlaceholderText(/0012345678/i);
+    fireEvent.change(tinInput, { target: { value: '0012345678' } });
+
     // 2. Fill item description and price
     const itemInput = screen.getByPlaceholderText(/Enter item description/i);
     fireEvent.change(itemInput, { target: { value: 'Thermal Receipt Paper Roll 80mm' } });

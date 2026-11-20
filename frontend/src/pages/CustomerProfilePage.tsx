@@ -132,6 +132,17 @@ export const CustomerProfilePage: React.FC = () => {
       return;
     }
 
+    if (!formTin.trim()) {
+      setFormError('TIN Number is mandatory.');
+      return;
+    }
+
+    const cleanTin = formTin.trim().replace(/[\s-]/g, '');
+    if (!/^\d{9,12}$/.test(cleanTin)) {
+      setFormError('TIN Number must be a valid 10-digit number (e.g., 0012345678).');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload: CustomerUpdateInput = {
@@ -834,10 +845,11 @@ export const CustomerProfilePage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    TIN Number (10 digits, Optional)
+                    TIN Number (10 digits) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
+                    required
                     value={formTin}
                     onChange={(e) => setFormTin(e.target.value)}
                     placeholder="e.g. 0012345678"
