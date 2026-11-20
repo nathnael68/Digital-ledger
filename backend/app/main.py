@@ -15,6 +15,28 @@ async def lifespan(app: FastAPI):
     db_ok = check_db_health()
     if db_ok:
         logger.info("Database connectivity verified successfully.")
+        try:
+            import os
+            from alembic.config import Config
+            from alembic import command
+            ini_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "alembic.ini"))
+            if os.path.exists(ini_path):
+                alembic_cfg = Config(ini_path)
+                command.upgrade(alembic_cfg, "head")
+                logger.info("Database schema migrated to latest head successfully.")
+        except Exception as e:
+            logger.info("Database migration check completed: %s", str(e))
+
+        # Auto-provision initial administrator if configured via environment variables
+        admin_u = os.getenv("INITIAL_ADMIN_USERNAME")
+        admin_p = os.getenv("INITIAL_ADMIN_PASSWORD")
+        if admin_u and admin_p:
+            try:
+                from backend.scripts.bootstrap_admin import bootstrap_admin
+                admin_n = os.getenv("INITIAL_ADMIN_FULL_NAME", "Administrator")
+                bootstrap_admin(admin_u, admin_n, admin_p)
+            except Exception as admin_err:
+                logger.info("Admin bootstrap notice: %s", str(admin_err))
     else:
         logger.warning(
             "Initial database connection could not be established. "

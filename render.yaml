@@ -1,0 +1,72 @@
+services:
+  # --------------------------------------------------------------------------
+  # 1. Delgone Digital Sales Ledger - Backend API Engine
+  # --------------------------------------------------------------------------
+  - type: web
+    name: delgone-ledger-api
+    runtime: python
+    region: frankfurt
+    plan: free
+    branch: master
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PROJECT_NAME
+        value: Delgone Digital Sales Ledger
+      - key: API_V1_STR
+        value: /api
+      - key: APP_TIMEZONE
+        value: Africa/Addis_Ababa
+      - key: APP_CURRENCY
+        value: ETB
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "480"
+      - key: INITIAL_ADMIN_USERNAME
+        value: admin
+      - key: INITIAL_ADMIN_FULL_NAME
+        value: Delgone Director
+      - key: INITIAL_ADMIN_PASSWORD
+        value: Delgone2026!
+      - key: CORS_ORIGINS
+        value: '["*"]'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: delgone-postgres
+          property: connectionString
+
+  # --------------------------------------------------------------------------
+  # 2. Delgone Digital Sales Ledger - Frontend PWA Application
+  # --------------------------------------------------------------------------
+  - type: web
+    name: delgone-ledger-app
+    runtime: static
+    region: frankfurt
+    plan: free
+    branch: master
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: delgone-ledger-api
+          property: host
+
+databases:
+  - name: delgone-postgres
+    plan: free
+    region: frankfurt
+    databaseName: delgone_ledger
+    user: delgone_admin
