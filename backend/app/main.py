@@ -122,6 +122,22 @@ def root():
     }
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    tb = traceback.format_exc()
+    logger.error("Unhandled Exception: %s\n%s", str(exc), tb)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal Server Error",
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+            "traceback": tb[-1000:],
+        },
+    )
+
+
 # Include API routes (/api/health, etc.)
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
