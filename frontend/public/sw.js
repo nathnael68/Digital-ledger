@@ -4,7 +4,7 @@
  * Version: 1.0.0
  */
 
-const CACHE_NAME = 'delgone-ledger-v1.0.0';
+const CACHE_NAME = 'delgone-ledger-v1.0.2';
 
 // Core Application Shell assets
 const PRECACHE_ASSETS = [
@@ -53,24 +53,9 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // API Requests: Network-first, NEVER cache mutations, explicit offline response
-  if (url.pathname.startsWith('/api/')) {
-    // If it's a GET request, attempt network, return clean offline status if network drops
-    event.respondWith(
-      fetch(request).catch(() => {
-        return new Response(
-          JSON.stringify({
-            detail: 'You are currently offline. A live connection is required for financial operations.',
-            offline: true,
-          }),
-          {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      })
-    );
+  // API Requests and mutations: Never intercept in Service Worker.
+  // Allow browser to perform direct, unhindered network requests with full cookie and CORS support.
+  if (url.pathname.startsWith('/api/') || request.method !== 'GET') {
     return;
   }
 
