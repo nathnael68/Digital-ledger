@@ -47,8 +47,6 @@ services:
   - type: web
     name: delgone-ledger-app
     runtime: static
-    region: frankfurt
-    plan: free
     branch: master
     rootDir: frontend
     buildCommand: npm install && npm run build
